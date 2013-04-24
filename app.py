@@ -1,3 +1,4 @@
+import os
 import tornado.httpserver
 import tornado.auth
 import tornado.web
@@ -7,6 +8,9 @@ import tornado.gen
 
 import tornadoredis
 
+PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
+STATIC_PATH = os.path.join(PROJECT_PATH, 'static')
+TEMPLATE_PATH = os.path.join(PROJECT_PATH, 'templates')
 
 c = tornadoredis.Client()
 c.connect()
@@ -23,7 +27,7 @@ class MainHandler(BaseHandler):
 
     @tornado.web.authenticated
     def get(self):
-        self.render("template.html", title="PubSub + WebSocket Demo")
+        self.render('index.html', title='PubSub + WebSocket Demo')
 
 
 class NewMessage(BaseHandler):
@@ -40,7 +44,7 @@ class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
 
     @tornado.web.asynchronous
     def get(self):
-        if self.get_argument("openid.mode", None):
+        if self.get_argument('openid.mode', None):
             self.get_authenticated_user(self._on_auth)
             return
         self.authenticate_redirect()
@@ -50,7 +54,7 @@ class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
             self.authenticate_redirect()
             return
         self.set_secure_cookie('user', str(user))
-        self.redirect(self.get_argument("next", "/"))
+        self.redirect(self.get_argument('next', '/'))
         # Save the user with, e.g., set_secure_cookie()
 
 
@@ -87,11 +91,13 @@ class MessagesCatcher(tornado.websocket.WebSocketHandler):
 
 settings = {
     'cookie_secret': '151068a7abbb45b82fcaadc0eed3dd4e',
-    'login_url': '/login'
+    'login_url': '/login',
+    'template_path': TEMPLATE_PATH
 }
 
 application = tornado.web.Application([
     (r'/', MainHandler),
+    (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
     (r'/msg', NewMessage),
     (r'/login', GoogleLoginHandler),
     (r'/track/', MessagesCatcher),
