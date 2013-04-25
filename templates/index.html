@@ -20,7 +20,7 @@ function open_websocket(){
     document.body.appendChild(el);
   }
 
-  var ws = new WebSocket("ws://0.0.0.0:8888/track/");
+  var ws = new WebSocket("ws://0.0.0.0:8888/track");
   ws.onopen = function() {
     show_message('Connected.');
   }
@@ -32,6 +32,11 @@ function open_websocket(){
   }
 }
 $(function(){
+  $('#change_chater').on('click', function(){
+    $.ajax({
+      url: '/change_chater'
+    })
+  });
   open_websocket();
 });
 {% end %}
