@@ -21,7 +21,8 @@ c.connect()
 @tornado.gen.engine
 def init_data():
     with c.pipeline() as pipe:
-        pipe.set('waiters', 1)
+        chaters = []
+        pipe.set('waiters', json.dumps(chaters))
         yield tornado.gen.Task(pipe.execute)
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -41,37 +42,48 @@ class MainHandler(BaseHandler):
 class StartChatHandler(BaseHandler):
 
     @tornado.web.authenticated
+    @tornado.web.asynchronous
     @tornado.gen.engine
     def get(self):
         status = 'unjoined'
         user = self.get_current_user()
-        prev_chater = self.get_secure_cookie('chater')
+        prev_chater = yield tornado.gen.Task(c.get, user['uuid'])
         waiters = yield tornado.gen.Task(c.get, 'waiters')
+        waiters = json.loads(waiters)
+        next_chater = ''
+        if waiters:
+            next_chater = random.choice(waiters)
+            waiters.remove(next_chater)
+            self.set_secure_cookie('chater', next_chater)
+            status = 'joined'
+        elif user['uuid'] not in waiters:
+            waiters.append(user['uuid'])
+        if prev_chater:
+            waiters.append(prev_chater)
+        with c.pipeline() as pipe:
+            pipe.set('waiters', json.dumps(waiters))
+            pipe.set(user['uuid'], next_chater)
+            if next_chater:
+                pipe.set(next_chater, user['uuid'])
+            yield tornado.gen.Task(pipe.execute)
         self.write(status)
-#        if waiters:
-#            next_chater = random.choice(waiters)
-#            waiters.remove(next_chater)
-#            self.set_secure_cookie('chater', next_chater)
-#            status = 'joined'
-#        elif user['uui'] not in waiters:
-#            waiters.append(user['uuid'])
-#        if prev_chater:
-#            waiters.append(prev_chater)
-#        with c.pipeline() as pipe:
-#            pipe.set('waiters', waiters)
-#            yield tornado.gen.Task(pipe.execute)
+        self.finish()
 
 
 class NewMessage(BaseHandler):
 
     @tornado.web.authenticated
+    @tornado.web.asynchronous
+    @tornado.gen.engine
     def post(self):
         message = self.get_argument('message')
-        chater = self.get_secure_cookie('chater')
+        user = self.get_current_user()
+        chater = yield tornado.gen.Task(c.get,  user['uuid'])
         if chater:
             c.publish(chater, message)
-        #self.set_header('Content-Type', 'text/plain')
-        #self.write('sent: %s' % (message,))
+        self.set_header('Content-Type', 'text/plain')
+        self.write('sent: %s' % (message,))
+        self.finish()
 
 class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
 
