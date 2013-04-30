@@ -2,6 +2,7 @@ import os
 import random
 import json
 import uuid
+import logging
 import tornado.httpserver
 import tornado.auth
 import tornado.web
@@ -10,6 +11,10 @@ import tornado.ioloop
 import tornado.gen
 
 import tornadoredis
+
+import tornado.options
+tornado.options.parse_command_line()
+
 
 PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
 STATIC_PATH = os.path.join(PROJECT_PATH, 'static')
@@ -23,6 +28,34 @@ def init_data():
     with c.pipeline() as pipe:
         chaters = []
         pipe.set('waiters', json.dumps(chaters))
+        yield tornado.gen.Task(pipe.execute)
+
+@tornado.gen.engine
+def change_chater(user):
+    prev_chater = yield tornado.gen.Task(c.get, user['uuid'])
+    waiters = yield tornado.gen.Task(c.get, 'waiters')
+    waiters = json.loads(waiters)
+    next_chater = ''
+    if waiters:
+        next_chater = random.choice(waiters)
+    if next_chater and next_chater != user['uuid']:
+        data = {}
+        data['status'] = 'chat_started'
+        data['message'] = 'start'
+        c.publish(next_chater, json.dumps(data))
+        c.publish(user['uuid'], json.dumps(data))
+        waiters.remove(next_chater)
+    elif user['uuid'] not in waiters:
+        waiters.append(user['uuid'])
+    if prev_chater:
+        waiters.append(prev_chater)
+
+    logging.info(waiters)
+    with c.pipeline() as pipe:
+        pipe.set('waiters', json.dumps(waiters))
+        pipe.set(user['uuid'], next_chater)
+        if next_chater:
+            pipe.set(next_chater, user['uuid'])
         yield tornado.gen.Task(pipe.execute)
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -43,30 +76,9 @@ class StartChatHandler(BaseHandler):
 
     @tornado.web.authenticated
     @tornado.web.asynchronous
-    @tornado.gen.engine
     def get(self):
-        status = 'unjoined'
         user = self.get_current_user()
-        prev_chater = yield tornado.gen.Task(c.get, user['uuid'])
-        waiters = yield tornado.gen.Task(c.get, 'waiters')
-        waiters = json.loads(waiters)
-        next_chater = ''
-        if waiters:
-            next_chater = random.choice(waiters)
-            waiters.remove(next_chater)
-            self.set_secure_cookie('chater', next_chater)
-            status = 'joined'
-        elif user['uuid'] not in waiters:
-            waiters.append(user['uuid'])
-        if prev_chater:
-            waiters.append(prev_chater)
-        with c.pipeline() as pipe:
-            pipe.set('waiters', json.dumps(waiters))
-            pipe.set(user['uuid'], next_chater)
-            if next_chater:
-                pipe.set(next_chater, user['uuid'])
-            yield tornado.gen.Task(pipe.execute)
-        self.write(status)
+        change_chater(user)
         self.finish()
 
 
@@ -76,13 +88,13 @@ class NewMessage(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.engine
     def post(self):
-        message = self.get_argument('message')
+        data = {}
+        data['message'] = self.get_argument('message')
+        data['status'] = 'message'
         user = self.get_current_user()
         chater = yield tornado.gen.Task(c.get,  user['uuid'])
         if chater:
-            c.publish(chater, message)
-        self.set_header('Content-Type', 'text/plain')
-        self.write('sent: %s' % (message,))
+            c.publish(chater, json.dumps(data))
         self.finish()
 
 class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
@@ -106,8 +118,10 @@ class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
 
 class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
-    def __init__(self, *args, **kwargs):
-        super(MessagesCatcher, self).__init__(*args, **kwargs)
+    @tornado.gen.engine
+    def open(self):
+        user = self.get_current_user()
+        change_chater(user)
         self.listen()
 
     @tornado.gen.engine
@@ -122,20 +136,34 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     def on_message(self, msg):
         if msg.kind == 'message':
-            self.write_message(msg.body)
+            self.write_message(json.loads(msg.body))
         if msg.kind == 'disconnect':
             # Do not forget to restart a listen loop
             # after a successful reconnect attempt.
 
             # Do not try to reconnect, just send a message back
             # to the client and close the client connection
-            self.write_message('The connection terminated '
-                               'due to a Redis server error.')
             self.close()
 
+    @tornado.gen.engine
     def on_close(self):
+        user = self.get_current_user()
+        chater = yield tornado.gen.Task(c.get,  user['uuid'])
+        if chater:
+            data = {}
+            data['status'] = 'chat_ended'
+            data['message'] = 'end'
+            c.publish(chater, json.dumps(data))
+            with c.pipeline() as pipe:
+                waiters = yield tornado.gen.Task(c.get, 'waiters')
+                waiters = json.loads(waiters)
+                waiters.append(chater)
+                pipe.set('waiters', json.dumps(waiters))
+                pipe.set(user['uuid'], '')
+                pipe.set(chater, '')
+                yield tornado.gen.Task(pipe.execute)
         if self.client.subscribed:
-            self.client.unsubscribe(self.get_current_user()['uuid'])
+            self.client.unsubscribe(user['uuid'])
             self.client.disconnect()
 
 settings = {

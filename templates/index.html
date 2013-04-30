@@ -3,38 +3,76 @@
 {% block body %}
 <h1>{{ title }}</h1>
   <p>Enter your message and press the 'Send' button. You may open another browser window and send messages from here.</p>
-<form method="POST" action="/msg" target="_hidden">
+<form method="POST" action="#" data-url="/msg">
  <input name="message" style="width: 500px;border: 1px solid #CCC;padding: 3px;" value="" placeholder="Enter your message here and press the 'Send' button."/>
  <input type="submit" value="Post"/>
 </form>
-<iframe id="_hidden" style="display:none"></iframe>
-<h2>Messages</h2>
+<div id="chat">
+</div>
 <hr/>
 {% end %}
 
 {% block script %}
-function open_websocket(){
-  function show_message(message){
-    var el = document.createElement('div');
-    el.innerHTML = message;
-    document.body.appendChild(el);
+
+function process_data(data){
+  console.log(data);
+  if(data['status']=='message'){
+    show_message(data['message'], 'text-info')
+  } else if(data['status']=='chat_ended'){
+    chat_ended();
+  } else if(data['status']=='chat_started'){
+    chat_started();
   }
+}
+
+function clear(){
+  $('#chat').empty();
+}
+
+function chat_ended(){
+  clear();
+  show_message('Closed.', 'muted');
+}
+
+function chat_started(){
+  clear();
+  show_message('Connected.', 'muted');
+}
+
+function show_message(message, status){
+  var msg = $('<p />').text(message).addClass(status);
+  msg.prependTo($('#chat'))
+}
+
+function open_websocket(){
 
   var ws = new WebSocket("ws://0.0.0.0:8888/track");
   ws.onopen = function() {
-    show_message('Connected.');
+    //show_message('Connected.', 'muted');
   }
   ws.onmessage = function(event) {
-    show_message(event.data);
+    var data_msg = $.parseJSON(event.data);
+    process_data(data_msg);
   }
   ws.onclose = function() {
-    show_message("Closed.");
+    chat_ended();
   }
 }
 $(function(){
   $('#change_chater').on('click', function(){
     $.ajax({
       url: '/change_chater'
+    })
+  });
+  $('input[type=submit]').on('click', function(e){
+    e.preventDefault();
+    var button = $(this);
+    var form = button.parents('form');
+    show_message(form.find('input[name=message]').val(), 'text-success');
+    $.ajax({
+      method: 'POST',
+      url: form.data('url'),
+      data: form.serialize(),
     })
   });
   open_websocket();
