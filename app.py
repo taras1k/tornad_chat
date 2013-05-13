@@ -71,6 +71,10 @@ class MainHandler(BaseHandler):
     def get(self):
         self.render('index.html', title='PubSub + WebSocket Demo')
 
+class RoomHandler(BaseHandler):
+
+    def get(self, room):
+        self.render('room.html', room=room)
 
 class StartChatHandler(BaseHandler):
 
@@ -95,6 +99,20 @@ class NewMessage(BaseHandler):
         chater = yield tornado.gen.Task(c.get,  user['uuid'])
         if chater:
             c.publish(chater, json.dumps(data))
+        self.finish()
+
+class RoomMessage(BaseHandler):
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    @tornado.gen.engine
+    def post(self, room):
+        data = {}
+        user = self.get_current_user()
+        data['message'] = self.get_argument('message')
+        data['status'] = 'message'
+        data['user'] = user['uuid']
+        c.publish(room, json.dumps(data))
         self.finish()
 
 class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
@@ -166,6 +184,41 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
             self.client.unsubscribe(user['uuid'])
             self.client.disconnect()
 
+class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
+
+    @tornado.gen.engine
+    def open(self, room):
+        user = self.get_current_user()
+        change_chater(user)
+        self.room = room
+        self.listen()
+
+    @tornado.gen.engine
+    def listen(self):
+        user = self.get_current_user()
+        self.client = tornadoredis.Client()
+        if user:
+            self.client.connect()
+            yield tornado.gen.Task(self.client.subscribe, self.room)
+            self.client.listen(self.on_message)
+
+    def on_message(self, msg):
+        if msg.kind == 'message':
+            self.write_message(json.loads(msg.body))
+        if msg.kind == 'disconnect':
+            # Do not forget to restart a listen loop
+            # after a successful reconnect attempt.
+
+            # Do not try to reconnect, just send a message back
+            # to the client and close the client connection
+            self.close()
+
+    @tornado.gen.engine
+    def on_close(self):
+        if self.client.subscribed:
+            self.client.unsubscribe(self.room)
+            self.client.disconnect()
+
 settings = {
     'cookie_secret': '151068a7abbb45b82fcaadc0eed3dd4e',
     'login_url': '/login',
@@ -176,8 +229,11 @@ application = tornado.web.Application([
     (r'/', MainHandler),
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
     (r'/msg', NewMessage),
+    (r'/room_msg/(.*)', RoomMessage),
     (r'/login', GoogleLoginHandler),
     (r'/track', MessagesCatcher),
+    (r'/room_track/(.*)', RoomMessagesCatcher),
+    (r'/room/(.*)', RoomHandler),
     (r'/change_chater', StartChatHandler),
 ], **settings)
 

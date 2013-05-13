@@ -8,7 +8,7 @@
     <meta name="author" content="">
 
     <!-- styles -->
-    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <style>
       body {
         padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
@@ -24,7 +24,7 @@
 
   <body>
 
-    <div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="navbar navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
           <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -36,14 +36,14 @@
           <div class="nav-collapse collapse">
             <ul class="nav pull-right">
               <li>
-                <a href="/login" class="btn" id="login">
+                <a href="/login" id="login">
                   Login
                 </a>
               </li>
               <li>
-                <button class="btn" id="change_chater">
+                <a id="change_chater">
                   Change chater
-                </button>
+                </a>
               </li>
             </ul>
             <ul class="nav">

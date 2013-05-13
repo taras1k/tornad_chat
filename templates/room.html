@@ -1,11 +1,11 @@
 {% extends 'layout.html' %}
-
+<h3> you're in {{ room }} room</h3>
 {% block head %}
   <script src="/static/js/socket.js"></script>
 {% end %}
 
 {% block body %}
-<form method="POST" action="#" data-url="/msg">
+<form method="POST" action="#" data-url="/room_msg/{{ room }}">
  <input name="message" style="width: 500px;height: 45px;border: 1px solid #CCC;padding: 3px;" value="" placeholder="Enter your message here and press the 'Send' button."/>
  <input type="submit" value="Send" class="btn btn-large btn-primary"/>
 </form>
@@ -16,7 +16,7 @@
 
 {% block script %}
 
-var CHAT_URL = 'ws://0.0.0.0:8888/track';
+var CHAT_URL = 'ws://0.0.0.0:8888/room_track/{{ room }}';
 
 $(function(){
   $('#change_chater').on('click', function(e){
@@ -29,7 +29,6 @@ $(function(){
     e.preventDefault();
     var button = $(this);
     var form = button.parents('form');
-    show_message(form.find('input[name=message]').val(), 'me');
     $.ajax({
       method: 'POST',
       url: form.data('url'),
