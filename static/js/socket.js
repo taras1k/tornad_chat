@@ -7,8 +7,6 @@ function process_data(data){
       chater = data['user']
     };
     show_message(data['message'], chater)
-  } else if(data['status']=='chat_ended'){
-    chat_ended();
   } else if(data['status']=='chat_started'){
     chat_started();
   }

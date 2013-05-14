@@ -47,7 +47,7 @@ def change_chater(user):
         waiters.remove(next_chater)
     elif user['uuid'] not in waiters:
         waiters.append(user['uuid'])
-    if prev_chater:
+    if prev_chater and prev_chater not in waiters:
         waiters.append(prev_chater)
 
     logging.info(waiters)
@@ -69,7 +69,16 @@ class BaseHandler(tornado.web.RequestHandler):
 class MainHandler(BaseHandler):
 
     def get(self):
-        self.render('index.html', title='PubSub + WebSocket Demo')
+        if self.get_current_user():
+            self.redirect('/chat')
+        else:
+            self.render('index.html', title='PubSub + WebSocket Demo')
+
+class ChatHandler(BaseHandler):
+
+    @tornado.web.authenticated
+    def get(self):
+        self.render('personal_chat.html', title='PubSub + WebSocket Demo')
 
 class RoomHandler(BaseHandler):
 
@@ -130,7 +139,7 @@ class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
             return
         user['uuid'] = uuid.uuid4().get_hex()
         self.set_secure_cookie('user', json.dumps(user))
-        self.redirect(self.get_argument('next', '/'))
+        self.redirect(self.get_argument('next', '/chat'))
         # Save the user with, e.g., set_secure_cookie()
 
 
@@ -167,15 +176,16 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
     def on_close(self):
         user = self.get_current_user()
         chater = yield tornado.gen.Task(c.get,  user['uuid'])
+        data = {}
+        data['status'] = 'chat_ended'
+        data['message'] = 'start'
+        c.publish(user['uuid'], json.dumps(data))
         if chater:
-            data = {}
-            data['status'] = 'chat_ended'
-            data['message'] = 'end'
-            c.publish(chater, json.dumps(data))
             with c.pipeline() as pipe:
                 waiters = yield tornado.gen.Task(c.get, 'waiters')
                 waiters = json.loads(waiters)
-                waiters.append(chater)
+                if chater and chater not in waiters:
+                    waiters.append(chater)
                 pipe.set('waiters', json.dumps(waiters))
                 pipe.set(user['uuid'], '')
                 pipe.set(chater, '')
@@ -189,7 +199,6 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
     @tornado.gen.engine
     def open(self, room):
         user = self.get_current_user()
-        change_chater(user)
         self.room = room
         self.listen()
 
@@ -227,6 +236,7 @@ settings = {
 
 application = tornado.web.Application([
     (r'/', MainHandler),
+    (r'/chat', ChatHandler),
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
     (r'/msg', NewMessage),
     (r'/room_msg/(.*)', RoomMessage),
