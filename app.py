@@ -162,6 +162,7 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
             self.client.listen(self.on_message)
 
     def on_message(self, msg):
+        logging.info(msg)
         if msg.kind == 'message':
             self.write_message(json.loads(msg.body))
         if msg.kind == 'disconnect':
@@ -176,11 +177,11 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
     def on_close(self):
         user = self.get_current_user()
         chater = yield tornado.gen.Task(c.get,  user['uuid'])
-        data = {}
-        data['status'] = 'chat_ended'
-        data['message'] = 'start'
-        c.publish(user['uuid'], json.dumps(data))
         if chater:
+            data = {}
+            data['status'] = 'chat_ended'
+            data['message'] = 'start'
+            c.publish(chater, json.dumps(data))
             with c.pipeline() as pipe:
                 waiters = yield tornado.gen.Task(c.get, 'waiters')
                 waiters = json.loads(waiters)
