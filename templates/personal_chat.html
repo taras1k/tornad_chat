@@ -10,6 +10,11 @@
       Change chater
     </a>
   </li>
+  <li>
+    <a id="enter_room" data-toggle="modal" role="button" data-target="#roomModal">
+      Enter room
+    </a>
+  </li>
 {% end %}
 
 {% block body %}
@@ -20,6 +25,26 @@
 <div id="chat">
 </div>
 <hr/>
+<div id="roomModal" class="modal hide fade" tabindex="-1" role="dialog">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="roomModalLabel">Enter room</h3>
+  </div>
+  <div class="modal-body">
+    <form class="form-horizontal">
+      <div class="control-group">
+        <label class="control-label" for="inputRoom">Room</label>
+        <div class="controls">
+          <input type="text" id="inputRoom" placeholder="room">
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    <button  id="enterRoom" class="btn btn-primary">Enter</button>
+  </div>
+</div>
 {% end %}
 
 {% block script %}
@@ -27,6 +52,12 @@
 var CHAT_URL = 'ws://0.0.0.0:8888/track';
 
 $(function(){
+  $('#enterRoom').on('click', function(e){
+    var room = $('#inputRoom').val();
+    if(room){
+      window.location.replace("/room/"+room);
+    }
+  });
   $('#change_chater').on('click', function(e){
     e.preventDefault();
     $.ajax({
@@ -37,12 +68,15 @@ $(function(){
     e.preventDefault();
     var button = $(this);
     var form = button.parents('form');
-    show_message(form.find('input[name=message]').val(), 'me');
-    $.ajax({
-      method: 'POST',
-      url: form.data('url'),
-      data: form.serialize(),
-    })
+    if(form.find('input[name=message]').val()){
+        show_message(form.find('input[name=message]').val(), 'me');
+        $.ajax({
+          method: 'POST',
+          url: form.data('url'),
+          data: form.serialize(),
+          success: form[0].reset()
+        })
+    }
   });
   open_websocket(CHAT_URL);
 });
