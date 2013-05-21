@@ -18,9 +18,11 @@
 {% end %}
 
 {% block body %}
-<form method="POST" action="#" data-url="/msg">
- <input name="message" style="width: 500px;height: 45px;border: 1px solid #CCC;padding: 3px;" value="" placeholder="Enter your message here and press the 'Send' button."/>
- <input type="submit" value="Send" class="btn btn-large btn-primary"/>
+<form method="POST" action="#" data-url="/msg" class="form-search">
+  <div class="controls controls-row">
+   <input class="span8 message-input" name="message" value="" placeholder="Enter your message here and press the 'Send' button."/>
+   <input type="submit" value="Send" class="btn btn-large btn-primary span2"/>
+  </div>
 </form>
 <div id="chat">
 </div>

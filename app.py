@@ -9,67 +9,77 @@ import tornado.web
 import tornado.websocket
 import tornado.ioloop
 import tornado.gen
-
 import tornadoredis
-
 import tornado.options
-tornado.options.parse_command_line()
+from mongotor.database import Database
+from models import User, Room, Waiters
 
+tornado.options.parse_command_line()
 
 PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
 STATIC_PATH = os.path.join(PROJECT_PATH, 'static')
 TEMPLATE_PATH = os.path.join(PROJECT_PATH, 'templates')
 
-c = tornadoredis.Client()
+c = tornadoredis.Client(selected_db='massages')
 c.connect()
-
-@tornado.gen.engine
-def init_data():
-    with c.pipeline() as pipe:
-        chaters = []
-        pipe.set('waiters', json.dumps(chaters))
-        yield tornado.gen.Task(pipe.execute)
-
-@tornado.gen.engine
-def change_chater(user):
-    prev_chater = yield tornado.gen.Task(c.get, user['uuid'])
-    waiters = yield tornado.gen.Task(c.get, 'waiters')
-    waiters = json.loads(waiters)
-    next_chater = ''
-    if waiters:
-        next_chater = random.choice(waiters)
-    if next_chater and next_chater != user['uuid']:
-        data = {}
-        data['status'] = 'chat_started'
-        data['message'] = 'start'
-        c.publish(next_chater, json.dumps(data))
-        c.publish(user['uuid'], json.dumps(data))
-        waiters.remove(next_chater)
-    elif user['uuid'] not in waiters:
-        waiters.append(user['uuid'])
-    if prev_chater and prev_chater not in waiters:
-        waiters.append(prev_chater)
-
-    logging.info(waiters)
-    with c.pipeline() as pipe:
-        pipe.set('waiters', json.dumps(waiters))
-        pipe.set(user['uuid'], next_chater)
-        if next_chater:
-            pipe.set(next_chater, user['uuid'])
-        yield tornado.gen.Task(pipe.execute)
+Database.connect(['localhost:27017'], 'anon_chat')
 
 class BaseHandler(tornado.web.RequestHandler):
 
     def get_current_user(self):
-        user = self.get_secure_cookie('user')
-        if user:
-            return json.loads(user)
-        return None
+        return self.get_secure_cookie('user')
+
+    def db_response(self, response):
+        logging.info(response)
+
+
+    @property
+    def user(self):
+        if not hasattr(self, '_user'):
+            user_id = self.get_current_user()
+            self._user = User.objects.find_one({'uuid': user_id},
+                                               self.db_response)
+            if not self._user:
+                self._user = User()
+                self._user.uuid = user_id
+                self._user.chater = ''
+                self._user.save()
+        logging.info(self._user)
+        return self._user
+
+    @tornado.gen.engine
+    def change_chater(self):
+        prev_chater = self.user.chater
+        waiters = yield tornado.gen.Task(Waiters.objects.find_one, {})
+        logging.info(waiters._id)
+        next_chater = ''
+        if not waiters:
+            waiters = Waiters()
+            waiters.queue = []
+            yield tornado.gen.Task(waiters.save)
+        queue = waiters.queue[:]
+        if queue:
+            next_chater = random.choice(queue)
+        if next_chater and next_chater != self.user.uuid:
+            data = {}
+            data['status'] = 'chat_started'
+            data['message'] = 'start'
+            c.publish(next_chater, json.dumps(data))
+            c.publish(self.user.uuid, json.dumps(data))
+            queue.remove(next_chater)
+        elif self.user.uuid not in queue:
+            queue.append(self.user.uuid)
+        if prev_chater and prev_chater not in waiters.queue:
+            queue.append(prev_chater)
+        waiters.queue = queue
+        logging.info(waiters.queue)
+        yield tornado.gen.Task(self.user.update)
+        yield tornado.gen.Task(waiters.update, multi=True, upsert=True)
 
 class MainHandler(BaseHandler):
 
     def get(self):
-        if self.get_current_user():
+        if self.user:
             self.redirect('/chat')
         else:
             self.render('index.html', title='PubSub + WebSocket Demo')
@@ -90,8 +100,7 @@ class StartChatHandler(BaseHandler):
     @tornado.web.authenticated
     @tornado.web.asynchronous
     def get(self):
-        user = self.get_current_user()
-        change_chater(user)
+        self.change_chater()
         self.finish()
 
 
@@ -104,10 +113,8 @@ class NewMessage(BaseHandler):
         data = {}
         data['message'] = self.get_argument('message')
         data['status'] = 'message'
-        user = self.get_current_user()
-        chater = yield tornado.gen.Task(c.get,  user['uuid'])
-        if chater:
-            c.publish(chater, json.dumps(data))
+        if self.user.chater:
+            c.publish(self.user.chater, json.dumps(data))
         self.finish()
 
 class RoomMessage(BaseHandler):
@@ -117,10 +124,9 @@ class RoomMessage(BaseHandler):
     @tornado.gen.engine
     def post(self, room):
         data = {}
-        user = self.get_current_user()
         data['message'] = self.get_argument('message')
         data['status'] = 'message'
-        data['user'] = user['uuid']
+        data['user'] = self.user.uuid
         c.publish(room, json.dumps(data))
         self.finish()
 
@@ -137,8 +143,7 @@ class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
         if not user:
             self.authenticate_redirect()
             return
-        user['uuid'] = uuid.uuid4().get_hex()
-        self.set_secure_cookie('user', json.dumps(user))
+        self.set_secure_cookie('user', uuid.uuid4().get_hex())
         self.redirect(self.get_argument('next', '/chat'))
         # Save the user with, e.g., set_secure_cookie()
 
@@ -147,17 +152,15 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def open(self):
-        user = self.get_current_user()
-        change_chater(user)
+        self.change_chater()
         self.listen()
 
     @tornado.gen.engine
     def listen(self):
-        user = self.get_current_user()
         self.client = tornadoredis.Client()
-        if user:
+        if self.user:
             self.client.connect()
-            chanel_name = user['uuid']
+            chanel_name = self.user.uuid
             yield tornado.gen.Task(self.client.subscribe, chanel_name)
             self.client.listen(self.on_message)
 
@@ -175,39 +178,38 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def on_close(self):
-        user = self.get_current_user()
-        chater = yield tornado.gen.Task(c.get,  user['uuid'])
-        if chater:
+        if self.user.chater:
             data = {}
             data['status'] = 'chat_ended'
             data['message'] = 'start'
-            c.publish(chater, json.dumps(data))
-            with c.pipeline() as pipe:
-                waiters = yield tornado.gen.Task(c.get, 'waiters')
-                waiters = json.loads(waiters)
-                if chater and chater not in waiters:
-                    waiters.append(chater)
-                pipe.set('waiters', json.dumps(waiters))
-                pipe.set(user['uuid'], '')
-                pipe.set(chater, '')
-                yield tornado.gen.Task(pipe.execute)
+            c.publish(self.user.chater, json.dumps(data))
+            waiters = yield tornado.gen.Task(Waiters.objects.find_one, {})
+            if not waiters:
+                waiters = Waiters()
+                waiters.queue = []
+                yield tornado.gen.Task(waiters.save)
+            if self.user.uuid in waiters.queue:
+                waiters.queue.remove(self.user.uuid)
+            if self.user.chater not in queue:
+                queue.append(self.user.chater)
+            self.user.chater = ''
+            yield tornado.gen.Task(self.user.update)
+            yield tornado.gen.Task(waiters.update)
         if self.client.subscribed:
-            self.client.unsubscribe(user['uuid'])
+            self.client.unsubscribe(self.user['uuid'])
             self.client.disconnect()
 
 class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def open(self, room):
-        user = self.get_current_user()
         self.room = room
         self.listen()
 
     @tornado.gen.engine
     def listen(self):
-        user = self.get_current_user()
         self.client = tornadoredis.Client()
-        if user:
+        if self.user:
             self.client.connect()
             yield tornado.gen.Task(self.client.subscribe, self.room)
             self.client.listen(self.on_message)
@@ -249,7 +251,6 @@ application = tornado.web.Application([
 ], **settings)
 
 if __name__ == '__main__':
-    init_data()
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(8888)
     print 'Demo is runing at 0.0.0.0:8888\nQuit the demo with CONTROL-C'
