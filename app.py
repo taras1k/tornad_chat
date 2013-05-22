@@ -11,6 +11,7 @@ import tornado.ioloop
 import tornado.gen
 import tornadoredis
 import tornado.options
+from tornado.escape import json_encode
 from mongotor.database import Database
 from models import User, Room, Waiters
 
@@ -73,7 +74,6 @@ class BaseHandler(tornado.web.RequestHandler):
         elif user.uuid not in queue:
             queue.append(user.uuid)
         if prev_chater:
-
             chater = yield tornado.gen.Task(User.objects.find_one,
                                                 {'uuid': prev_chater})
             if chater:
@@ -88,12 +88,26 @@ class BaseHandler(tornado.web.RequestHandler):
 class MainHandler(BaseHandler):
 
     def get(self):
-        logging.info('ttest')
         user = self.get_current_user()
         if user:
             self.redirect('/chat')
         else:
             self.render('index.html', title='PubSub + WebSocket Demo')
+
+class PopularRoomsHandler(BaseHandler):
+
+    @tornado.gen.engine
+    @tornado.web.asynchronous
+    def get(self):
+        rooms = yield tornado.gen.Task(Room.objects.find, {})
+        popular_rooms = []
+        for room in rooms:
+            r = room.as_dict()
+            r.pop('_id')
+            popular_rooms.append(r)
+        self.set_header('Content-Type', 'application/json')
+        self.write(json_encode(popular_rooms))
+        self.finish()
 
 class ChatHandler(BaseHandler):
 
@@ -224,7 +238,14 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def open(self, room):
-        self.room = room
+        self.room = yield tornado.gen.Task(Room.objects.find_one, {'name': room})
+        if not self.room:
+            self.room = Room()
+            self.room.visitors = 0
+            self.room.name = room
+            yield tornado.gen.Task(self.room.save)
+        self.room.visitors += 1
+        yield tornado.gen.Task(self.room.update)
         self.listen()
 
     @tornado.gen.engine
@@ -233,7 +254,7 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
         user = yield tornado.gen.Task(self.user)
         if user:
             self.client.connect()
-            yield tornado.gen.Task(self.client.subscribe, self.room)
+            yield tornado.gen.Task(self.client.subscribe, self.room.name)
             self.client.listen(self.on_message)
 
     def on_message(self, msg):
@@ -249,8 +270,10 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def on_close(self):
+        self.room.visitors -= 1
+        yield tornado.gen.Task(self.room.update)
         if self.client.subscribed:
-            self.client.unsubscribe(self.room)
+            self.client.unsubscribe(self.room.name)
             self.client.disconnect()
 
 settings = {
@@ -267,6 +290,7 @@ application = tornado.web.Application([
     (r'/room_msg/(.*)', RoomMessage),
     (r'/login', GoogleLoginHandler),
     (r'/track', MessagesCatcher),
+    (r'/popular_rooms', PopularRoomsHandler),
     (r'/room_track/(.*)', RoomMessagesCatcher),
     (r'/room/(.*)', RoomHandler),
     (r'/change_chater', StartChatHandler),

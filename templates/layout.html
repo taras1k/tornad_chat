@@ -53,6 +53,14 @@
 
   </body>
   <script>
+  $(function(){
+   $.ajax({
+     url: '/popular_rooms',
+     success: function(data){
+       console.log(data[0])
+     }
+   })
+  })
   {% block script %}
   {% end %}
   </script>

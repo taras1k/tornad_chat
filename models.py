@@ -22,4 +22,3 @@ class Waiters(Collection):
     __collection__ = 'queue'
     _id = ObjectIdField()
     queue = ListField()
-    er = StringField()
