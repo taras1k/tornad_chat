@@ -5,9 +5,11 @@
 
 {% block body %}
 <h3> You're in "{{ room }}" room</h3>
-<form method="POST" action="#" data-url="/room_msg/{{ room }}">
- <input name="message" value="" placeholder="Enter your message here and press the 'Send' button."/>
- <input type="submit" value="Send" class="btn btn-large btn-primary"/>
+<form method="POST" action="#" data-url="/room_msg/{{ room }}" class="form-search">
+  <div class="controls controls-row">
+   <input class="span8 message-input" name="message" value="" placeholder="Enter your message here and press the 'Send' button."/>
+   <input type="submit" value="Send" class="btn btn-large btn-primary span2"/>
+  </div>
 </form>
 <div id="chat">
 </div>
@@ -30,12 +32,14 @@ $(function(){
     e.preventDefault();
     var button = $(this);
     var form = button.parents('form');
-    $.ajax({
-      method: 'POST',
-      url: form.data('url'),
-      data: form.serialize(),
-      success: form[0].reset()
-    })
+    if(form.find('input[name=message]').val()){
+        $.ajax({
+          method: 'POST',
+          url: form.data('url'),
+          data: form.serialize(),
+          success: form[0].reset()
+        })
+    }
   });
   open_websocket(CHAT_URL);
 });
