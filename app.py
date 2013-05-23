@@ -191,7 +191,7 @@ class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
         if not user:
             self.authenticate_redirect()
             return
-        self.set_secure_cookie('user', uuid.uuid4().get_hex(), domain=URL)
+        self.set_secure_cookie('user', uuid.uuid4().get_hex())
         self.redirect(self.get_argument('next', '/chat'))
         # Save the user with, e.g., set_secure_cookie()
 
