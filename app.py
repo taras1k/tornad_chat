@@ -13,6 +13,7 @@ import tornadoredis
 import tornado.options
 from tornado.escape import json_encode
 from mongotor.database import Database
+from config import URL
 from models import User, Room, Waiters
 
 tornado.options.parse_command_line()
@@ -99,6 +100,11 @@ class BaseHandler(tornado.web.RequestHandler):
         yield tornado.gen.Task(user.update)
         yield tornado.gen.Task(waiters.update)
 
+    def render_template(self, template_name, *kw):
+        user = self.get_current_user()
+        self.render(template_name, user=user, url=URL, *kw)
+
+
 class MainHandler(BaseHandler):
 
     def get(self):
@@ -106,7 +112,7 @@ class MainHandler(BaseHandler):
         if user:
             self.redirect('/chat')
         else:
-            self.render('index.html', title='PubSub + WebSocket Demo')
+            self.render_template('index.html', title='PubSub + WebSocket Demo')
 
 class PopularRoomsHandler(BaseHandler):
 
@@ -128,12 +134,12 @@ class ChatHandler(BaseHandler):
 
     @tornado.web.authenticated
     def get(self):
-        self.render('personal_chat.html', title='PubSub + WebSocket Demo')
+        self.render_template('personal_chat.html')
 
 class RoomHandler(BaseHandler):
 
     def get(self, room):
-        self.render('room.html', room=room)
+        self.render_template('room.html', room=room)
 
 class StartChatHandler(BaseHandler):
 
@@ -185,7 +191,7 @@ class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
         if not user:
             self.authenticate_redirect()
             return
-        self.set_secure_cookie('user', uuid.uuid4().get_hex())
+        self.set_secure_cookie('user', uuid.uuid4().get_hex(), domain=URL)
         self.redirect(self.get_argument('next', '/chat'))
         # Save the user with, e.g., set_secure_cookie()
 
