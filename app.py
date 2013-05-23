@@ -139,6 +139,7 @@ class ChatHandler(BaseHandler):
 
 class RoomHandler(BaseHandler):
 
+    @tornado.web.authenticated
     def get(self, room):
         self.render_template('room.html', room=room)
 
