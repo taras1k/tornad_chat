@@ -27,9 +27,15 @@ Database.connect(['localhost:27017'], 'anon_chat')
 
 @tornado.gen.engine
 def init_data():
-    yield tornado.gen.Task(Waiters.objects.remove, {})
-    yield tornado.gen.Task(User.objects.remove, {})
-    yield tornado.gen.Task(Room.objects.remove, {})
+    waiters = yield tornado.gen.Task(Waiters.objects.find, {})
+    for waiter in waiters:
+        yield tornado.gen.Task(waiter.remove)
+    users = yield tornado.gen.Task(User.objects.find, {})
+    for user in users:
+        yield tornado.gen.Task(user.remove)
+    rooms = yield tornado.gen.Task(Room.objects.find, {})
+    for room in rooms:
+        yield tornado.gen.Task(room.remove)
 
 class BaseHandler(tornado.web.RequestHandler):
 
