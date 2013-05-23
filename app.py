@@ -100,9 +100,9 @@ class BaseHandler(tornado.web.RequestHandler):
         yield tornado.gen.Task(user.update)
         yield tornado.gen.Task(waiters.update)
 
-    def render_template(self, template_name, *kw):
+    def render_template(self, template_name, **kw):
         user = self.get_current_user()
-        self.render(template_name, user=user, url=URL, *kw)
+        self.render(template_name, user=user, url=URL, **kw)
 
 
 class MainHandler(BaseHandler):
