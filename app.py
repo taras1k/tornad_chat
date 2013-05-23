@@ -41,6 +41,7 @@ def init_data():
 class BaseHandler(tornado.web.RequestHandler):
 
     def get_current_user(self):
+        logging.info(self.cookies)
         return self.get_secure_cookie('user')
 
     @tornado.gen.engine
