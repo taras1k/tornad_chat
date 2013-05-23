@@ -47,17 +47,44 @@
     </div>
 
     <div class="container">
-    {% block body %}
-    {% end %}
+      <div class="row-fluid">
+        <div class="span3">
+          <h3>People talks about</h3>
+          <div id="rooms">
+          </div>
+        </div>
+        <div id="messages" class="span9">
+          {% block body %}
+          {% end %}
+        </div>
+      </div>
     </div> <!-- /container -->
 
   </body>
   <script>
+  function draw_rooms(data){
+    var rooms = $('#rooms');
+    rooms.empty();
+    for(i in data){
+      var room_data = data[i];
+      var room_obj = $('<div />').addClass('lead')
+                                 .addClass('text-info');
+      var room_anc = $('<a />');
+      room_anc.text('#'+room_data['name']);
+      room_anc.attr('href', '/room/'+room_data['name']);
+      var room_visitors = $('<span />').addClass('badge')
+                                       .addClass('badge-warning');
+      room_visitors.text(room_data['visitors']);
+      room_obj.append(room_anc);
+      room_obj.append(room_visitors);
+      rooms.append(room_obj);
+    }
+  }
   $(function(){
    $.ajax({
      url: '/popular_rooms',
      success: function(data){
-       console.log(data[0])
+       draw_rooms(data);
      }
    })
   })

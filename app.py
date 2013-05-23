@@ -99,7 +99,8 @@ class PopularRoomsHandler(BaseHandler):
     @tornado.gen.engine
     @tornado.web.asynchronous
     def get(self):
-        rooms = yield tornado.gen.Task(Room.objects.find, {})
+        rooms = yield tornado.gen.Task(Room.objects.find, {}, limit=20,
+                                       sort=[('visitors', 'ASC')])
         popular_rooms = []
         for room in rooms:
             r = room.as_dict()
