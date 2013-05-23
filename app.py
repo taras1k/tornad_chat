@@ -310,9 +310,9 @@ application = tornado.web.Application([
     (r'/msg', NewMessage),
     (r'/room_msg/(.*)', RoomMessage),
     (r'/login', GoogleLoginHandler),
-    (r'/track', MessagesCatcher),
+    (r'/ws/track', MessagesCatcher),
     (r'/popular_rooms', PopularRoomsHandler),
-    (r'/room_track/(.*)', RoomMessagesCatcher),
+    (r'/ws/room_track/(.*)', RoomMessagesCatcher),
     (r'/room/(.*)', RoomHandler),
     (r'/change_chater', StartChatHandler),
 ], **settings)
