@@ -304,6 +304,7 @@ application = tornado.web.Application([
 ], **settings)
 
 if __name__ == '__main__':
+    init_data()
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(8888)
     print 'Demo is runing at 0.0.0.0:8888\nQuit the demo with CONTROL-C'
