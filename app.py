@@ -25,6 +25,12 @@ c = tornadoredis.Client(selected_db='massages')
 c.connect()
 Database.connect(['localhost:27017'], 'anon_chat')
 
+@tornado.gen.engine
+def init_data():
+    yield tornado.gen.Task(Waiters.objects.remove, {})
+    yield tornado.gen.Task(User.objects.remove, {})
+    yield tornado.gen.Task(Room.objects.remove, {})
+
 class BaseHandler(tornado.web.RequestHandler):
 
     def get_current_user(self):
