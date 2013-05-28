@@ -42,6 +42,7 @@ function show_message(message, status){
                              .text(status);
     msg.addClass('text-info');
     label.prependTo(msg);
+    $.titleAlert('new message');
   }
   msg.prependTo($('#chat'))
 }
