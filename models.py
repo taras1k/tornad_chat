@@ -16,7 +16,7 @@ class Room(Collection):
     _id = ObjectIdField()
     name = StringField()
     visitors = IntegerField()
-    last_id = IntegerField()
+    last_chater_id = IntegerField()
 
 
 class Waiters(Collection):
