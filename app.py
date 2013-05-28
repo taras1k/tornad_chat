@@ -176,7 +176,7 @@ class RoomMessage(BaseHandler):
         data = {}
         data['message'] = self.get_argument('message')
         data['status'] = 'message'
-        data['user'] = user.uuid
+        data['user'] = 'chater%i' % user.room_chater_id
         c.publish(room, json.dumps(data))
         self.finish()
 
@@ -262,13 +262,18 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
     @tornado.gen.engine
     def open(self, room):
         self.room = yield tornado.gen.Task(Room.objects.find_one, {'name': room})
+        user = yield tornado.gen.Task(self.user)
         if not self.room:
             self.room = Room()
             self.room.visitors = 0
+            self.room.last_chater_id = 0
             self.room.name = room
             yield tornado.gen.Task(self.room.save)
         self.room.visitors += 1
+        self.room.last_chater_id += 1
+        user.room_chater_id = self.room.last_chater_id
         yield tornado.gen.Task(self.room.update)
+        yield tornado.gen.Task(user.update)
         self.listen()
 
     @tornado.gen.engine

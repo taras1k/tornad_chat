@@ -8,6 +8,7 @@ class User(Collection):
     _id = ObjectIdField()
     uuid = StringField()
     chater = StringField()
+    room_chater_id = IntegerField()
 
 class Room(Collection):
 
@@ -15,6 +16,7 @@ class Room(Collection):
     _id = ObjectIdField()
     name = StringField()
     visitors = IntegerField()
+    last_id = IntegerField()
 
 
 class Waiters(Collection):
