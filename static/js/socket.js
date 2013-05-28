@@ -1,3 +1,12 @@
+var tabActive;
+
+window.onfocus = function () {
+  tabActive = true;
+};
+
+window.onblur = function () {
+    tabActive = false;
+};
 
 function process_data(data){
   console.log(data);
@@ -42,7 +51,9 @@ function show_message(message, status){
                              .text(status);
     msg.addClass('text-info');
     label.prependTo(msg);
-    $.titleAlert('new message');
+    if (!tabActive){
+      $.titleAlert('new message');
+    }
   }
   msg.prependTo($('#chat'))
 }
