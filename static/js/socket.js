@@ -69,6 +69,6 @@ function open_websocket(url){
     process_data(data_msg);
   }
   ws.onclose = function() {
-    chat_ended();
+    open_websocket(url);
   }
 }
