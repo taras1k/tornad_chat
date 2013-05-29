@@ -44,12 +44,12 @@ function show_message(message, status){
   } else if (status=='me'){00
     var label = $('<span />').addClass('label badge-success')
                              .text('me');
-    msg.addClass('text-success');
-    label.prependTo(msg);
+    msg.addClass('text-success').addClass('text-right');
+    label.appendTo(msg);
   } else{
     var label = $('<span />').addClass('label badge-info')
                              .text(status);
-    msg.addClass('text-info');
+    msg.addClass('text-info').addClass('text-left');
     label.prependTo(msg);
     if (!tabActive){
       $.titleAlert('new message');
