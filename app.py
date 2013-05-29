@@ -288,12 +288,12 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     def on_message(self, msg):
         if msg.kind == 'message':
-            user = yield tornado.gen.Task(self.user)
+            user_id = self.get_current_user()
             message = json.loads(msg.body)
-            if user.uuid == message['uuid']:
+            if user_id == message['uuid']:
                 message['user'] = 'me'
             del message['uuid']
-            self.write_message(json.loads(msg.body))
+            self.write_message(message)
         if msg.kind == 'disconnect':
             # Do not forget to restart a listen loop
             # after a successful reconnect attempt.
