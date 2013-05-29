@@ -177,6 +177,7 @@ class RoomMessage(BaseHandler):
         data['message'] = self.get_argument('message')
         data['status'] = 'message'
         data['user'] = 'chater%i' % user.room_chater_id
+        data['uuid'] = user.uuid
         c.publish(room, json.dumps(data))
         self.finish()
 
@@ -287,6 +288,11 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     def on_message(self, msg):
         if msg.kind == 'message':
+            user = yield tornado.gen.Task(self.user)
+            message = json.loads(msg.body)
+            if user.uuid == message['uuid']:
+                message['user'] = 'me'
+            del message['uuid']
             self.write_message(json.loads(msg.body))
         if msg.kind == 'disconnect':
             # Do not forget to restart a listen loop

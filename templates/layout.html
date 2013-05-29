@@ -37,6 +37,18 @@
           <a class="brand" href="/">Chat</a>
           <div class="nav-collapse collapse">
             <ul class="nav pull-right">
+              {% if user %}
+                <li>
+                  <a id="change_chater">
+                    Change chater
+                  </a>
+                </li>
+                <li>
+                  <a id="enter_room" data-toggle="modal" role="button" data-target="#roomModal">
+                    Start new talk
+                  </a>
+                </li>
+              {% end %}
               {% block menu %}
               {% end %}
             </ul>
