@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import random
 import json
@@ -262,7 +263,6 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def open(self, room):
-        room = unicode(room)
         self.room = yield tornado.gen.Task(Room.objects.find_one, {'name': room})
         user = yield tornado.gen.Task(self.user)
         if not self.room:
@@ -321,7 +321,7 @@ application = tornado.web.Application([
     (r'/', MainHandler),
     (r'/chat', ChatHandler),
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
-    (r'/msg', NewMessage),
+    (r'/msg', NewMessage)room,
     (r'/room_msg/(.*)', RoomMessage),
     (r'/login', GoogleLoginHandler),
     (r'/ws/track', MessagesCatcher),
