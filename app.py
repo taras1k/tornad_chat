@@ -263,6 +263,7 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def open(self, room):
+        room = unicode(room, 'utf-8')
         self.room = yield tornado.gen.Task(Room.objects.find_one, {'name': room})
         user = yield tornado.gen.Task(self.user)
         if not self.room:
