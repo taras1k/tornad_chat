@@ -321,7 +321,7 @@ application = tornado.web.Application([
     (r'/', MainHandler),
     (r'/chat', ChatHandler),
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
-    (r'/msg', NewMessage)room,
+    (r'/msg', NewMessage),
     (r'/room_msg/(.*)', RoomMessage),
     (r'/login', GoogleLoginHandler),
     (r'/ws/track', MessagesCatcher),
