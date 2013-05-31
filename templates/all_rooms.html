@@ -11,7 +11,9 @@
   <tbody>
     {% for room in rooms %}
       <tr>
-        <th>{{ room.name }}</th>
+        <th>
+          <a href="/room/{{ room.name }}">{{ room.name }}</a>
+        </th>
         <th>{{ room.visitors }}</th>
       </tr>
     {% end %}
