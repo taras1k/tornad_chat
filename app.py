@@ -132,6 +132,20 @@ class PopularRoomsHandler(BaseHandler):
         self.write(json_encode(popular_rooms))
         self.finish()
 
+class AllRoomsHandler(BaseHandler):
+
+    @tornado.gen.engine
+    @tornado.web.asynchronous
+    def get(self):
+        rooms = yield tornado.gen.Task(Room.objects.find, {},
+                                       sort=[('visitors', 'ASC')])
+        all_rooms = []
+        for room in rooms:
+            r = room.as_dict()
+            r.pop('_id')
+            all_rooms.append(r)
+        self.render_template('all_rooms.html', rooms=all_rooms)
+
 class ChatHandler(BaseHandler):
 
     @tornado.web.authenticated
@@ -327,6 +341,7 @@ application = tornado.web.Application([
     (r'/login', GoogleLoginHandler),
     (r'/ws/track', MessagesCatcher),
     (r'/popular_rooms', PopularRoomsHandler),
+    (r'/all_rooms', AllRoomsHandler),
     (r'/ws/room_track/(.*)', RoomMessagesCatcher),
     (r'/room/(.*)', RoomHandler),
     (r'/change_chater', StartChatHandler),
