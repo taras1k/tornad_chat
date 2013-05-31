@@ -49,7 +49,6 @@ class BaseHandler(tornado.web.RequestHandler):
     def user(self, callback):
         if not hasattr(self, '_user'):
             user_id = self.get_current_user()
-            logging.info(user_id)
             if user_id:
                 self._user = yield tornado.gen.Task(User.objects.find_one,
                                                     {'uuid': user_id})
@@ -60,7 +59,6 @@ class BaseHandler(tornado.web.RequestHandler):
                     yield tornado.gen.Task(self._user.save)
             else:
                 self._user = None
-            logging.info(self._user)
         callback(self._user)
 
 
@@ -213,7 +211,6 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def open(self):
-        self.change_chater()
         self.listen()
 
     @tornado.gen.engine
