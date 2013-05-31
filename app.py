@@ -86,6 +86,11 @@ class BaseHandler(tornado.web.RequestHandler):
             c.publish(user.uuid, json.dumps(data))
             user.chater = next_chater
             queue.remove(next_chater)
+            chater = yield tornado.gen.Task(User.objects.find_one,
+                                                {'uuid': next_chater})
+            if chater:
+                chater.chater = user.uuid
+                yield tornado.gen.Task(chater.update)
         elif user.uuid not in queue:
             queue.append(user.uuid)
         if prev_chater:
