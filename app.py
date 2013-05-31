@@ -139,12 +139,7 @@ class AllRoomsHandler(BaseHandler):
     def get(self):
         rooms = yield tornado.gen.Task(Room.objects.find, {},
                                        sort=[('visitors', 'ASC')])
-        all_rooms = []
-        for room in rooms:
-            r = room.as_dict()
-            r.pop('_id')
-            all_rooms.append(r)
-        self.render_template('all_rooms.html', rooms=all_rooms)
+        self.render_template('all_rooms.html', rooms=rooms)
 
 class ChatHandler(BaseHandler):
 
