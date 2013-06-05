@@ -274,29 +274,30 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def open(self, room):
-        room = unicode(room, 'utf-8')
-        self.room = yield tornado.gen.Task(Room.objects.find_one, {'name': room})
+        self.room = unicode(room, 'utf-8')
+        room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room})
         user = yield tornado.gen.Task(self.user)
-        if not self.room:
-            self.room = Room()
-            self.room.visitors = 0
-            self.room.last_chater_id = 0
-            self.room.name = room
-            yield tornado.gen.Task(self.room.save)
-        self.room.visitors += 1
-        self.room.last_chater_id += 1
+        if not room:
+            room = Room()
+            room.visitors = 0
+            room.last_chater_id = 0
+            room.name = room
+            yield tornado.gen.Task(room.save)
+        room.visitors += 1
+        room.last_chater_id += 1
         user.room_chater_id = self.room.last_chater_id
-        yield tornado.gen.Task(self.room.update)
-        yield tornado.gen.Task(user.update)
+        yield tornado.gen.Task(room.update)
+        yield tornado.gen.Task(update)
         self.listen()
 
     @tornado.gen.engine
     def listen(self):
         self.client = tornadoredis.Client()
         user = yield tornado.gen.Task(self.user)
+        room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room})
         if user:
             self.client.connect()
-            yield tornado.gen.Task(self.client.subscribe, self.room.name)
+            yield tornado.gen.Task(self.client.subscribe, room.name)
             self.client.listen(self.on_message)
 
     def on_message(self, msg):
@@ -317,10 +318,11 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def on_close(self):
-        self.room.visitors -= 1
+        room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room})
+        room.visitors -= 1
         yield tornado.gen.Task(self.room.update)
         if self.client.subscribed:
-            self.client.unsubscribe(self.room.name)
+            self.client.unsubscribe(room.name)
             self.client.disconnect()
 
 settings = {
