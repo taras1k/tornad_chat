@@ -287,7 +287,7 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
         room.last_chater_id += 1
         user.room_chater_id = room.last_chater_id
         yield tornado.gen.Task(room.update)
-        yield tornado.gen.Task(update)
+        yield tornado.gen.Task(user.update)
         self.listen()
 
     @tornado.gen.engine
@@ -320,7 +320,7 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
     def on_close(self):
         room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room})
         room.visitors -= 1
-        yield tornado.gen.Task(self.room.update)
+        yield tornado.gen.Task(room.update)
         if self.client.subscribed:
             self.client.unsubscribe(room.name)
             self.client.disconnect()
