@@ -285,7 +285,7 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
             yield tornado.gen.Task(room.save)
         room.visitors += 1
         room.last_chater_id += 1
-        user.room_chater_id = self.room.last_chater_id
+        user.room_chater_id = room.last_chater_id
         yield tornado.gen.Task(room.update)
         yield tornado.gen.Task(update)
         self.listen()
