@@ -273,15 +273,15 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
-    def open(self, room):
-        self.room = unicode(room, 'utf-8')
-        room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room})
+    def open(self, room_name):
+        self.room_name = unicode(room_name, 'utf-8')
+        room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room_name})
         user = yield tornado.gen.Task(self.user)
         if not room:
             room = Room()
             room.visitors = 0
             room.last_chater_id = 0
-            room.name = room
+            room.name = self.room_name
             yield tornado.gen.Task(room.save)
         room.visitors += 1
         room.last_chater_id += 1
@@ -294,7 +294,7 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
     def listen(self):
         self.client = tornadoredis.Client()
         user = yield tornado.gen.Task(self.user)
-        room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room})
+        room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room_name})
         if user:
             self.client.connect()
             yield tornado.gen.Task(self.client.subscribe, room.name)
@@ -318,9 +318,11 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def on_close(self):
-        room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room})
+        room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room_name})
+        logging.info(room.visitors)
         room.visitors -= 1
         yield tornado.gen.Task(room.update)
+        logging.info(room.visitors)
         if self.client.subscribed:
             self.client.unsubscribe(room.name)
             self.client.disconnect()
