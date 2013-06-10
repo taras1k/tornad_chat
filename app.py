@@ -42,7 +42,6 @@ def init_data():
 class BaseHandler(tornado.web.RequestHandler):
 
     def get_current_user(self):
-        logging.info(self.cookies)
         return self.get_secure_cookie('user')
 
     @tornado.gen.engine
@@ -73,11 +72,8 @@ class BaseHandler(tornado.web.RequestHandler):
             waiters.queue = []
             yield tornado.gen.Task(waiters.save)
         queue = waiters.queue[:]
-        logging.info(queue)
         if queue:
             next_chater = random.choice(queue)
-        logging.info(next_chater)
-        logging.info(user.uuid)
         if next_chater and next_chater != user.uuid:
             data = {}
             data['status'] = 'chat_started'
@@ -319,10 +315,8 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
     @tornado.gen.engine
     def on_close(self):
         room = yield tornado.gen.Task(Room.objects.find_one, {'name': self.room_name})
-        logging.info(room.visitors)
         room.visitors -= 1
         yield tornado.gen.Task(room.update)
-        logging.info(room.visitors)
         if self.client.subscribed:
             self.client.unsubscribe(room.name)
             self.client.disconnect()

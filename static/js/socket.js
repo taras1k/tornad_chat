@@ -1,4 +1,5 @@
 var tabActive;
+var retries = 0;
 
 window.onfocus = function () {
   tabActive = true;
@@ -66,6 +67,7 @@ function open_websocket(url){
 
   var ws = new WebSocket(url);
   ws.onopen = function() {
+    retries = 0;
     //show_message('Connected.', 'info');
   }
   ws.onmessage = function(event) {
@@ -73,6 +75,10 @@ function open_websocket(url){
     process_data(data_msg);
   }
   ws.onclose = function() {
-    open_websocket(url);
+    if (retries<5){
+        setTimeout(open_websocket, 1000, url);
+    }
+    retries++;
+    //open_websocket(url);
   }
 }
