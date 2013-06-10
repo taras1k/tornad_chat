@@ -132,14 +132,16 @@
        url: '/change_chater'
      })
    });
-   $.ajax({
-     url: '/popular_rooms',
-     success: function(data){
-       draw_rooms(data);
-     }
-   })
   })
   {% block script %}
   {% end %}
+  $(function(e){
+    $.ajax({
+      url: '/popular_rooms',
+      success: function(data){
+        draw_rooms(data);
+      }
+    })
+  })
   </script>
 </html>
