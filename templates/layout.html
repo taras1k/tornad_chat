@@ -119,7 +119,6 @@
     }
   }
   $(function(){
-
    $('#enterRoom').on('click', function(e){
      var room = $('#inputRoom').val();
      if(room){
@@ -128,18 +127,25 @@
    });
    $('#change_chater').on('click', function(e){
      e.preventDefault();
-     $.ajax({
-       url: '/change_chater'
-     })
-   });
-   $.ajax({
-     url: '/popular_rooms',
-     success: function(data){
-       draw_rooms(data);
+     if(window.location.pathname.split('/')[1] == 'chat'){
+       $.ajax({
+         url: '/change_chater'
+       })
      }
-   })
+     else{
+       window.location.replace('/chat');
+     }
+   });
   })
   {% block script %}
   {% end %}
+  $(function(){
+    $.ajax({
+      url: '/popular_rooms',
+      success: function(data){
+        draw_rooms(data);
+      }
+    })
+  })
   </script>
 </html>
