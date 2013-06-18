@@ -191,7 +191,7 @@ class TwitterLoginHandler(BaseHandler, tornado.auth.TwitterMixin):
     @tornado.web.asynchronous
     def get(self):
         if self.get_argument('oauth_token', None):
-            self.get_authenticated_user(self._on_auth)
+            self.get_authenticated_user(self.async_callback(self._on_auth))
             return
         self.authenticate_redirect()
 
@@ -208,7 +208,7 @@ class FacebookLoginHandler(BaseHandler, tornado.auth.FacebookMixin):
     @tornado.web.asynchronous
     def get(self):
         if self.get_argument('session', None):
-            self.get_authenticated_user(self._on_auth)
+            self.get_authenticated_user(self.async_callback(self._on_auth))
             return
         self.authenticate_redirect()
 
@@ -225,7 +225,7 @@ class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
     @tornado.web.asynchronous
     def get(self):
         if self.get_argument('openid.mode', None):
-            self.get_authenticated_user(self._on_auth)
+            self.get_authenticated_user(self.async_callback(self._on_auth))
             return
         self.authenticate_redirect()
 
