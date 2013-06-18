@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import random
 import json
 import uuid
@@ -14,14 +13,11 @@ import tornadoredis
 import tornado.options
 from tornado.escape import json_encode
 from mongotor.database import Database
-from config import URL
+from config import URL, STATIC_PATH, settings
 from models import User, Room, Waiters
 
 tornado.options.parse_command_line()
 
-PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
-STATIC_PATH = os.path.join(PROJECT_PATH, 'static')
-TEMPLATE_PATH = os.path.join(PROJECT_PATH, 'templates')
 
 c = tornadoredis.Client(selected_db='massages')
 c.connect()
@@ -190,6 +186,40 @@ class RoomMessage(BaseHandler):
         c.publish(room, json.dumps(data))
         self.finish()
 
+class TwitterLoginHandler(BaseHandler, tornado.auth.TwitterMixin):
+
+    @tornado.web.asynchronous
+    def get(self):
+        if self.get_argument('oauth_token', None):
+            self.get_authenticated_user(self._on_auth)
+            return
+        self.authenticate_redirect()
+
+    def _on_auth(self, user):
+        if not user:
+            self.authenticate_redirect()
+            return
+        self.set_secure_cookie('user', uuid.uuid4().get_hex())
+        self.redirect(self.get_argument('next', '/chat'))
+        # Save the user with, e.g., set_secure_cookie()
+
+class FacebookLoginHandler(BaseHandler, tornado.auth.FacebookMixin):
+
+    @tornado.web.asynchronous
+    def get(self):
+        if self.get_argument('session', None):
+            self.get_authenticated_user(self._on_auth)
+            return
+        self.authenticate_redirect()
+
+    def _on_auth(self, user):
+        if not user:
+            self.authenticate_redirect()
+            return
+        self.set_secure_cookie('user', uuid.uuid4().get_hex())
+        self.redirect(self.get_argument('next', '/chat'))
+        # Save the user with, e.g., set_secure_cookie()
+
 class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
 
     @tornado.web.asynchronous
@@ -206,6 +236,13 @@ class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
         self.set_secure_cookie('user', uuid.uuid4().get_hex())
         self.redirect(self.get_argument('next', '/chat'))
         # Save the user with, e.g., set_secure_cookie()
+
+class LogoutHandler(BaseHandler):
+
+    @tornado.web.asynchronous
+    def get(self):
+        self.clear_cookie('user')
+        self.redirect('/')
 
 
 class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
@@ -322,11 +359,6 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
             self.client.unsubscribe(room.name)
             self.client.disconnect()
 
-settings = {
-    'cookie_secret': '151068a7abbb45b82fcaadc0eed3dd4e',
-    'login_url': '/login',
-    'template_path': TEMPLATE_PATH
-}
 
 application = tornado.web.Application([
     (r'/', MainHandler),
@@ -334,7 +366,10 @@ application = tornado.web.Application([
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
     (r'/msg', NewMessage),
     (r'/room_msg/(.*)', RoomMessage),
-    (r'/login', GoogleLoginHandler),
+    (r'/login_g', GoogleLoginHandler),
+    (r'/login_fb', FacebookLoginHandler),
+    (r'/login_tw', TwitterLoginHandler),
+    (r'/logout', LogoutHandler),
     (r'/ws/track', MessagesCatcher),
     (r'/popular_rooms', PopularRoomsHandler),
     (r'/all_rooms', AllRoomsHandler),

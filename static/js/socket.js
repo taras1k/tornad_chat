@@ -63,9 +63,14 @@ function show_message(message, status){
   msg.prependTo($('#chat'))
 }
 
+var ws = new WebSocket(url);
+
+$('#logout').on('click', function(e){
+  ws.close();
+})
+
 function open_websocket(url){
 
-  var ws = new WebSocket(url);
   ws.onopen = function() {
     retries = 0;
     //show_message('Connected.', 'info');
