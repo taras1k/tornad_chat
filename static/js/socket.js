@@ -72,6 +72,8 @@ $('#logout').on('click', function(e){
 
 function open_websocket(url){
 
+  ws = new WebSocket(url);
+
   ws.onopen = function() {
     retries = 0;
     //show_message('Connected.', 'info');
