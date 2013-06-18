@@ -64,7 +64,7 @@ function show_message(message, status){
   msg.prependTo($('#chat'))
 }
 
-var ws = new WebSocket(url);
+var ws;
 
 $('#logout').on('click', function(e){
   ws.close();
