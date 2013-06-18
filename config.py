@@ -2,8 +2,8 @@ import os
 from keys import COOKIE_SECRET, TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET,\
     FACEBOOK_API_KEY, FACEBOOK_SECRET
 
-URL = '0.0.0.0:8888'
-#URL = 'chat.nek.me'
+#URL = '0.0.0.0:8888'
+URL = 'chat.nek.me'
 
 PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
 STATIC_PATH = os.path.join(PROJECT_PATH, 'static')
