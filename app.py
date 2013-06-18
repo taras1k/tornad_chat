@@ -203,22 +203,26 @@ class TwitterLoginHandler(BaseHandler, tornado.auth.TwitterMixin):
         self.redirect(self.get_argument('next', '/chat'))
         # Save the user with, e.g., set_secure_cookie()
 
-class FacebookLoginHandler(BaseHandler, tornado.auth.FacebookMixin):
+class FacebookLoginHandler(BaseHandler, tornado.auth.FacebookGraphMixin):
 
     @tornado.web.asynchronous
+    @tornado.gen.coroutine
     def get(self):
-        if self.get_argument('session', None):
-            self.get_authenticated_user(self.async_callback(self._on_auth))
-            return
-        self.authenticate_redirect()
+        if self.get_argument("code", False):
+            user = yield self.get_authenticated_user(
+              redirect_uri='/auth/facebookgraph/',
+              client_id=self.settings["facebook_api_key"],
+              client_secret=self.settings["facebook_secret"],
+              code=self.get_argument("code"))
+            self.set_secure_cookie('user', uuid.uuid4().get_hex())
+            self.redirect(self.get_argument('next', '/chat'))
+          # Save the user with e.g. set_secure_cookie
+        else:
+            yield self.authorize_redirect(
+                redirect_uri='/auth/facebookgraph/',
+                client_id=self.settings["facebook_api_key"],
+                extra_params={"scope": "read_stream,offline_access"})
 
-    def _on_auth(self, user):
-        if not user:
-            self.authenticate_redirect()
-            return
-        self.set_secure_cookie('user', uuid.uuid4().get_hex())
-        self.redirect(self.get_argument('next', '/chat'))
-        # Save the user with, e.g., set_secure_cookie()
 
 class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
 
