@@ -9,6 +9,7 @@ class User(Collection):
     uuid = StringField()
     chater = StringField()
     room_chater_id = IntegerField()
+    last_room = StringField()
 
 class Room(Collection):
 
