@@ -145,11 +145,14 @@
   })
   {% block script %}
   {% end %}
-  $(function(){
+  $(function get_popular_rooms(){
     $.ajax({
       url: '/popular_rooms',
       success: function(data){
         draw_rooms(data);
+      },
+      complete: function(){
+        setTimeout(get_popular_rooms, 30000);
       }
     })
   })
