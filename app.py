@@ -101,6 +101,10 @@ class BaseHandler(tornado.web.RequestHandler):
         user = self.get_current_user()
         self.render(template_name, user=user, url=URL, **kw)
 
+class NotSupportedHandler(BaseHandler):
+
+    def get(self):
+        self.render_template('not_supported.html', title='Not supported')
 
 class MainHandler(BaseHandler):
 
@@ -109,7 +113,7 @@ class MainHandler(BaseHandler):
         if user:
             self.redirect('/chat')
         else:
-            self.render_template('index.html', title='PubSub + WebSocket Demo')
+            self.render_template('index.html', title='Chat')
 
 class PopularRoomsHandler(BaseHandler):
 
@@ -370,6 +374,7 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
 application = tornado.web.Application([
     (r'/', MainHandler),
+    (r'/not_supported', NotSupportedHandler),
     (r'/chat', ChatHandler),
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
     (r'/msg', NewMessage),

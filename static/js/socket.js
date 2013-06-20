@@ -9,6 +9,10 @@ window.onblur = function () {
     tabActive = false;
 };
 
+if (!(window.WebSocket)){
+  window.location.replace('/not_supported');
+};
+
 function process_data(data){
   console.log(data);
   if(data['status']=='message'){
