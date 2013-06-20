@@ -43,7 +43,7 @@ function show_message(message, status){
   var pattern =
   /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))(jpg|gif|png|jpeg|bmp))/g;
   msg.html(msg.html().replace(pattern, "<img src='$1' />"))
-  var hash_pattern = /(^|\s)#(\w+)($|\s)/g;
+  var hash_pattern = /(^|\s)#(\S+)($|\s)/g;
   msg.html(msg.html().replace(hash_pattern, " <a href='/room/$2'>#$2</a> "))
   if(status=='info'){
     msg.addClass('muted')
