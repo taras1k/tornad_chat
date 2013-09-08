@@ -1,6 +1,6 @@
 import os
 from keys import COOKIE_SECRET, TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET,\
-    FACEBOOK_API_KEY, FACEBOOK_SECRET
+    FACEBOOK_API_KEY, FACEBOOK_SECRET, RECAPTCHA_PUBLIC, RECAPTCHA_PRIVATE
 
 #URL = '0.0.0.0:8888'
 URL = 'chat.nek.me'
@@ -16,5 +16,7 @@ settings = {
     'twitter_consumer_key': TWITTER_CONSUMER_KEY,
     'twitter_consumer_secret': TWITTER_CONSUMER_SECRET,
     'facebook_api_key': FACEBOOK_API_KEY,
-    'facebook_secret': FACEBOOK_SECRET
+    'facebook_secret': FACEBOOK_SECRET,
+    'recaptcha_private': RECAPTCHA_PRIVATE,
+    'recaptcha_public': RECAPTCHA_PUBLIC
 }
