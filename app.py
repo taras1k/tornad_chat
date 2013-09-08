@@ -11,9 +11,11 @@ import tornado.ioloop
 import tornado.gen
 import tornadoredis
 import tornado.options
+from recaptcha import RecaptchaClient
 from tornado.escape import json_encode
 from mongotor.database import Database
-from config import URL, STATIC_PATH, settings
+from config import URL, STATIC_PATH, settings, RECAPTCHA_PUBLIC
+from config import RECAPTCHA_PRIVATE
 from models import User, Room, Waiters
 
 tornado.options.parse_command_line()
@@ -113,7 +115,10 @@ class MainHandler(BaseHandler):
         if user:
             self.redirect('/chat')
         else:
-            self.render_template('index.html', title='Chat')
+            recaptcha_client = RecaptchaClient(RECAPTCHA_PRIVATE,
+                                               RECAPTCHA_PUBLIC)
+            self.render_template('index.html', title='Chat',
+                                 recaptcha=recaptcha_client)
 
 class PopularRoomsHandler(BaseHandler):
 
