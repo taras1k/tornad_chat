@@ -11,7 +11,7 @@ import tornado.ioloop
 import tornado.gen
 import tornadoredis
 import tornado.options
-from recaptcha import RecaptchaClient
+from recaptcha import RecaptchaClient, RecaptchaUnreachableError, RecaptchaException
 from tornado.escape import json_encode
 from mongotor.database import Database
 from config import URL, STATIC_PATH, settings
