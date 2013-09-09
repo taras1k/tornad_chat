@@ -111,13 +111,38 @@ class MainHandler(BaseHandler):
 
     def get(self):
         user = self.get_current_user()
+        error = ''
         if user:
-            self.redirect('/chat')
+            self.set_secure_cookie('user', uuid.uuid4().get_hex())
+            self.redirect(self.get_argument('next', '/chat'))
         else:
             recaptcha_client = RecaptchaClient(settings['recaptcha_private'],
                                                settings['recaptcha_public'])
             self.render_template('index.html', title='Chat',
-                                 recaptcha=recaptcha_client)
+                                 recaptcha=recaptcha_client, error=error)
+    def post(self):
+        recaptcha_response = self.get_argument('recaptcha_response_field')
+        recaptcha_challenge = self.get_argument('recaptcha_challenge_field')
+        error = ''
+        try:
+            is_solution_correct = recaptcha_client.is_solution_correct(
+                'hello world',
+                'challenge',
+                '192.0.2.0',
+                )
+        except RecaptchaUnreachableError as exc:
+             error = 'reCAPTCHA is unreachable; please try again later'
+        except RecaptchaException as exc:
+            error = exc
+        else:
+            if is_solution_correct:
+                self.redirect('/chat')
+            else:
+                error = 'Invalid solution to CAPTCHA challenge'
+        recaptcha_client = RecaptchaClient(settings['recaptcha_private'],
+                                           settings['recaptcha_public'])
+        self.render_template('index.html', title='Chat',
+                             recaptcha=recaptcha_client, error=error)
 
 class PopularRoomsHandler(BaseHandler):
 

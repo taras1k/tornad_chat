@@ -2,16 +2,10 @@
 
 {% block body %}
 <h1>Welcome</h1>
-<a href="/login_g" class="btn btn-large btn-success"/>
-  <p>Login with Google</p>
-</a>
-<a href="/login_fb" class="btn btn-large btn-primary"/>
-  <p>Login with Facebook</p>
-</a>
-<a href="/login_tw" class="btn btn-large btn-warning"/>
-  <p>Login with Twitter</p>
-</a>
 {% autoescape None %}
-{{ recaptcha.get_challenge_markup() }}
+<form action='#' method='POST'>
+    {{ recaptcha.get_challenge_markup() }}
+    <input type='submit' value='Login' class='button'>
+</form>
 {% end %}
 
