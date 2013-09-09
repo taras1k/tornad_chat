@@ -123,12 +123,14 @@ class MainHandler(BaseHandler):
     def post(self):
         recaptcha_response = self.get_argument('recaptcha_response_field')
         recaptcha_challenge = self.get_argument('recaptcha_challenge_field')
+        recaptcha_client = RecaptchaClient(settings['recaptcha_private'],
+                                           settings['recaptcha_public'])
         error = ''
         try:
             is_solution_correct = recaptcha_client.is_solution_correct(
-                'hello world',
-                'challenge',
-                '192.0.2.0',
+                recaptcha_response,
+                recaptcha_challenge,
+                self.request.remote_ip,
                 )
         except RecaptchaUnreachableError as exc:
              error = 'reCAPTCHA is unreachable; please try again later'
@@ -139,8 +141,6 @@ class MainHandler(BaseHandler):
                 self.redirect('/chat')
             else:
                 error = 'Invalid solution to CAPTCHA challenge'
-        recaptcha_client = RecaptchaClient(settings['recaptcha_private'],
-                                           settings['recaptcha_public'])
         self.render_template('index.html', title='Chat',
                              recaptcha=recaptcha_client, error=error)
 
