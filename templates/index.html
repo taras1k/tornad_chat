@@ -11,6 +11,7 @@
 <a href="/login_tw" class="btn btn-large btn-warning"/>
   <p>Login with Twitter</p>
 </a>
+{% autoescape None %}
 {{ recaptcha.get_challenge_markup() }}
 {% end %}
 
