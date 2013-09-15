@@ -2,10 +2,6 @@
 
 {% block body %}
 <h1>Welcome</h1>
-{% autoescape None %}
-<form action='#' method='POST'>
-    {{ recaptcha.get_challenge_markup() }}
-    <input type='submit' value='Login' class='button'>
-</form>
+<a href='/login' class="button">Go to login page</a>
 {% end %}
 

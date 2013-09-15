@@ -10,7 +10,7 @@ TEMPLATE_PATH = os.path.join(PROJECT_PATH, 'templates')
 
 settings = {
     'cookie_secret': COOKIE_SECRET,
-    'login_url': '/',
+    'login_url': '/login',
     'template_path': TEMPLATE_PATH,
     'recaptcha_private': RECAPTCHA_PRIVATE,
     'recaptcha_public': RECAPTCHA_PUBLIC,

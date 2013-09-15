@@ -111,6 +111,18 @@ class MainHandler(BaseHandler):
 
     def get(self):
         user = self.get_current_user()
+        if user:
+            self.set_secure_cookie('user', uuid.uuid4().get_hex())
+            self.redirect(self.get_argument('next', '/chat'))
+        else:
+            recaptcha_client = RecaptchaClient(settings['recaptcha_private'],
+                                               settings['recaptcha_public'])
+            self.render_template('index.html', title='Chat')
+
+class LoginHandler(BaseHandler):
+
+    def get(self):
+        user = self.get_current_user()
         error = ''
         if user:
             self.set_secure_cookie('user', uuid.uuid4().get_hex())
@@ -118,7 +130,7 @@ class MainHandler(BaseHandler):
         else:
             recaptcha_client = RecaptchaClient(settings['recaptcha_private'],
                                                settings['recaptcha_public'])
-            self.render_template('index.html', title='Chat',
+            self.render_template('login.html', title='Chat',
                                  recaptcha=recaptcha_client, error=error)
     def post(self):
         recaptcha_response = self.get_argument('recaptcha_response_field')
@@ -142,7 +154,7 @@ class MainHandler(BaseHandler):
                 self.redirect('/chat')
             else:
                 error = 'Invalid solution to CAPTCHA challenge'
-        self.render_template('index.html', title='Chat',
+        self.render_template('login.html', title='Chat',
                              recaptcha=recaptcha_client, error=error)
 
 class PopularRoomsHandler(BaseHandler):
@@ -349,6 +361,7 @@ class RoomMessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
 
 application = tornado.web.Application([
     (r'/', MainHandler),
+    (r'/login', LoginHandler),
     (r'/not_supported', NotSupportedHandler),
     (r'/chat', ChatHandler),
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),

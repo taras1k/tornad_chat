@@ -1,0 +1,9 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+{% autoescape None %}
+<form action='#' method='POST'>
+    {{ recaptcha.get_challenge_markup() }}
+    <button type='submit' class='button'>Login</button>
+</form>
+{% end %}
