@@ -1,6 +1,5 @@
 import os
-from keys import COOKIE_SECRET, TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET,\
-    FACEBOOK_API_KEY, FACEBOOK_SECRET, RECAPTCHA_PUBLIC, RECAPTCHA_PRIVATE
+from keys import COOKIE_SECRET, RECAPTCHA_PUBLIC, RECAPTCHA_PRIVATE
 
 #URL = '0.0.0.0:8888'
 URL = 'chat.nek.me'
@@ -11,12 +10,8 @@ TEMPLATE_PATH = os.path.join(PROJECT_PATH, 'templates')
 
 settings = {
     'cookie_secret': COOKIE_SECRET,
-    'login_url': '/login_fb',
+    'login_url': '/',
     'template_path': TEMPLATE_PATH,
-    'twitter_consumer_key': TWITTER_CONSUMER_KEY,
-    'twitter_consumer_secret': TWITTER_CONSUMER_SECRET,
-    'facebook_api_key': FACEBOOK_API_KEY,
-    'facebook_secret': FACEBOOK_SECRET,
     'recaptcha_private': RECAPTCHA_PRIVATE,
     'recaptcha_public': RECAPTCHA_PUBLIC
 }

@@ -138,6 +138,7 @@ class MainHandler(BaseHandler):
             error = exc
         else:
             if is_solution_correct:
+                self.set_secure_cookie('user', uuid.uuid4().get_hex())
                 self.redirect('/chat')
             else:
                 error = 'Invalid solution to CAPTCHA challenge'
@@ -218,61 +219,6 @@ class RoomMessage(BaseHandler):
         data['uuid'] = user.uuid
         c.publish(room, json.dumps(data))
         self.finish()
-
-class TwitterLoginHandler(BaseHandler, tornado.auth.TwitterMixin):
-
-    @tornado.web.asynchronous
-    def get(self):
-        if self.get_argument('oauth_token', None):
-            self.get_authenticated_user(self.async_callback(self._on_auth))
-            return
-        self.authenticate_redirect()
-
-    def _on_auth(self, user):
-        if not user:
-            self.authenticate_redirect()
-            return
-        self.set_secure_cookie('user', uuid.uuid4().get_hex())
-        self.redirect(self.get_argument('next', '/chat'))
-        # Save the user with, e.g., set_secure_cookie()
-
-class FacebookLoginHandler(BaseHandler, tornado.auth.FacebookGraphMixin):
-
-    @tornado.web.asynchronous
-    @tornado.gen.coroutine
-    def get(self):
-        if self.get_argument("code", False):
-            user = yield self.get_authenticated_user(
-                redirect_uri='http://'+URL+'/login_fb',
-              client_id=self.settings["facebook_api_key"],
-              client_secret=self.settings["facebook_secret"],
-              code=self.get_argument("code"))
-            self.set_secure_cookie('user', uuid.uuid4().get_hex())
-            self.redirect(self.get_argument('next', '/chat'))
-          # Save the user with e.g. set_secure_cookie
-        else:
-            yield self.authorize_redirect(
-                redirect_uri='http://'+URL+'/login_fb',
-                client_id=self.settings["facebook_api_key"],
-                extra_params={"scope": "read_stream,offline_access"})
-
-
-class GoogleLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
-
-    @tornado.web.asynchronous
-    def get(self):
-        if self.get_argument('openid.mode', None):
-            self.get_authenticated_user(self.async_callback(self._on_auth))
-            return
-        self.authenticate_redirect()
-
-    def _on_auth(self, user):
-        if not user:
-            self.authenticate_redirect()
-            return
-        self.set_secure_cookie('user', uuid.uuid4().get_hex())
-        self.redirect(self.get_argument('next', '/chat'))
-        # Save the user with, e.g., set_secure_cookie()
 
 class LogoutHandler(BaseHandler):
 
@@ -408,9 +354,6 @@ application = tornado.web.Application([
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
     (r'/msg', NewMessage),
     (r'/room_msg/(.*)', RoomMessage),
-    (r'/login_g', GoogleLoginHandler),
-    (r'/login_fb', FacebookLoginHandler),
-    (r'/login_tw', TwitterLoginHandler),
     (r'/logout', LogoutHandler),
     (r'/ws/track', MessagesCatcher),
     (r'/popular_rooms', PopularRoomsHandler),
