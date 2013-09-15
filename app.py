@@ -150,7 +150,6 @@ class LoginHandler(BaseHandler):
             if is_solution_correct:
                 self.set_secure_cookie('user', uuid.uuid4().get_hex())
                 self.redirect('/chat')
-                self.finish()
             else:
                 error = 'Invalid solution to CAPTCHA challenge'
         self.render_template('login.html', title='Chat',
