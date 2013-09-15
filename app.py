@@ -115,8 +115,6 @@ class MainHandler(BaseHandler):
             self.set_secure_cookie('user', uuid.uuid4().get_hex())
             self.redirect(self.get_argument('next', '/chat'))
         else:
-            recaptcha_client = RecaptchaClient(settings['recaptcha_private'],
-                                               settings['recaptcha_public'])
             self.render_template('index.html', title='Chat')
 
 class LoginHandler(BaseHandler):
