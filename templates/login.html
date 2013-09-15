@@ -4,6 +4,6 @@
 {% autoescape None %}
 <form action='#' method='POST'>
     {{ recaptcha.get_challenge_markup() }}
-    <button type='submit' class='btn btn-primary btn-large'>Login</button>
+    <input type='submit' value='Login' class='btn btn-primary btn-large'>
 </form>
 {% end %}
