@@ -149,11 +149,11 @@ class LoginHandler(BaseHandler):
         else:
             if is_solution_correct:
                 self.set_secure_cookie('user', uuid.uuid4().get_hex())
-                self.redirect('/chat')
+                self.redirect(self.get_argument('next', '/chat'))
             else:
                 error = 'Invalid solution to CAPTCHA challenge'
-        self.render_template('login.html', title='Chat',
-                             recaptcha=recaptcha_client, error=error)
+                self.render_template('login.html', title='Chat',
+                                     recaptcha=recaptcha_client, error=error)
 
 class PopularRoomsHandler(BaseHandler):
 
