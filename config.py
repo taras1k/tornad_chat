@@ -13,7 +13,7 @@ settings = {
     'login_url': '/',
     'template_path': TEMPLATE_PATH,
     'recaptcha_private': RECAPTCHA_PRIVATE,
-    'recaptcha_public': RECAPTCHA_PUBLIC
+    'recaptcha_public': RECAPTCHA_PUBLIC,
     'ssl_options': {'certfile': '/etc/nginx/ssl/cert.pem',
                     'keyfile': '/etc/nginx/ssl/cert.pem'}
 }
