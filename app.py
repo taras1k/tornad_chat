@@ -90,6 +90,9 @@ class BaseHandler(tornado.web.RequestHandler):
             chater = yield tornado.gen.Task(User.objects.find_one,
                                                 {'uuid': prev_chater})
             if chater:
+                data['status'] = 'chat_ended'
+                data['message'] = 'stop'
+                c.publish(chater.uuid, json.dumps(data))
                 chater.chater = ''
                 yield tornado.gen.Task(chater.update)
             if prev_chater not in waiters.queue:
