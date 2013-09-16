@@ -1,7 +1,29 @@
 {% extends 'layout.html' %}
 
 {% block body %}
-<h1>Welcome</h1>
-<a href='/login' class="btn btn-info btn-large">Go to login page</a>
+<div class="row-fluid">
+  <div class="span4">
+    <img src="http://img-fotki.yandex.ru/get/5011/86497389.0/0_ad750_6f22db0a_L.jpg"
+         class="img-circle" />
+  </div>
+  <div class="span8">
+    <h1>Welcome</h1>
+    <p class="lead">
+        This is chat where even cats and dogs are allowed.
+    </p>
+    <p class="lead">
+        You don't have to pretend to be a human to comunicate with others.
+    </p>
+    <p class="lead">
+        Be your self and don't tell others who you are.
+    </p>
+    <p>
+      <small>
+        if you have any ideas how to make it better, write to <a href="mailto:taras@nek.me">taras@nek.me</a>
+      </small>
+    </p>
+    <a href='/login' class="pull-right btn btn-info btn-large">Go to login page <i class="icon-chevron-right"></i></a>
+  </div>
+</div>
 {% end %}
 

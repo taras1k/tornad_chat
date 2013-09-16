@@ -60,6 +60,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
     @tornado.gen.engine
     def change_chater(self):
+        data = {}
         user = yield tornado.gen.Task(self.user)
         prev_chater = user.chater
         waiters = yield tornado.gen.Task(Waiters.objects.find_one, {})
@@ -72,7 +73,6 @@ class BaseHandler(tornado.web.RequestHandler):
         if queue:
             next_chater = random.choice(queue)
         if next_chater and next_chater != user.uuid:
-            data = {}
             data['status'] = 'chat_started'
             data['message'] = 'start'
             c.publish(next_chater, json.dumps(data))
