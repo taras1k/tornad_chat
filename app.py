@@ -35,6 +35,10 @@ def init_data():
     rooms = yield tornado.gen.Task(Room.objects.find, {})
     for room in rooms:
         yield tornado.gen.Task(room.remove)
+    waiters = Waiters()
+    waiters.queue = []
+    yield tornado.gen.Task(waiters.save)
+
 
 class BaseHandler(tornado.web.RequestHandler):
 
@@ -65,10 +69,6 @@ class BaseHandler(tornado.web.RequestHandler):
         prev_chater = user.chater
         waiters = yield tornado.gen.Task(Waiters.objects.find_one, {})
         next_chater = ''
-        if not waiters:
-            waiters = Waiters()
-            waiters.queue = []
-            yield tornado.gen.Task(waiters.save)
         queue = waiters.queue[:]
         if queue:
             next_chater = random.choice(queue)
@@ -273,17 +273,13 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
     @tornado.gen.engine
     def on_close(self):
         user = yield tornado.gen.Task(self.user)
+        waiters = yield tornado.gen.Task(Waiters.objects.find_one, {})
+        queue = waiters.queue[:]
         if user.chater:
             data = {}
             data['status'] = 'chat_ended'
             data['message'] = 'start'
             c.publish(user.chater, json.dumps(data))
-            waiters = yield tornado.gen.Task(Waiters.objects.find_one, {})
-            if not waiters:
-                waiters = Waiters()
-                waiters.queue = []
-                yield tornado.gen.Task(waiters.save)
-            queue = waiters.queue[:]
             if user.uuid in queue:
                 queue.remove(user.uuid)
             chater = yield tornado.gen.Task(User.objects.find_one,
@@ -295,8 +291,10 @@ class MessagesCatcher(BaseHandler, tornado.websocket.WebSocketHandler):
                 queue.append(user.chater)
             user.chater = ''
             yield tornado.gen.Task(user.update)
-            waiters.queue = queue
-            yield tornado.gen.Task(waiters.update)
+        if user.uuid in queue:
+            queue.remove(user.uuid)
+        waiters.queue = queue
+        yield tornado.gen.Task(waiters.update)
         if self.client.subscribed:
             self.client.unsubscribe(user.uuid)
             self.client.disconnect()
