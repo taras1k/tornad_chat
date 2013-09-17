@@ -74,6 +74,7 @@ class BaseHandler(tornado.web.RequestHandler):
             next_chater = random.choice(queue)
         else:
             queue.append(user.uuid)
+            user.chater = next_chater
         if next_chater and next_chater != user.uuid:
             data['status'] = 'chat_started'
             data['message'] = 'start'
@@ -81,7 +82,8 @@ class BaseHandler(tornado.web.RequestHandler):
             c.publish(user.uuid, json.dumps(data))
             user.chater = next_chater
             queue.remove(next_chater)
-            yield tornado.gen.Task(user.update)
+            if user.uuid in queue:
+                queue.remove(user.uuid)
             chater = yield tornado.gen.Task(User.objects.find_one,
                                                 {'uuid': next_chater})
             if chater:
@@ -98,9 +100,11 @@ class BaseHandler(tornado.web.RequestHandler):
                 c.publish(chater.uuid, json.dumps(data))
                 chater.chater = ''
                 yield tornado.gen.Task(chater.update)
+
             if prev_chater not in waiters.queue:
                 queue.append(prev_chater)
         waiters.queue = queue
+        yield tornado.gen.Task(user.update)
         yield tornado.gen.Task(waiters.update)
 
     def render_template(self, template_name, **kw):
@@ -117,7 +121,6 @@ class MainHandler(BaseHandler):
     def get(self):
         user = self.get_current_user()
         if user:
-            self.set_secure_cookie('user', uuid.uuid4().get_hex())
             self.redirect(self.get_argument('next', '/chat'))
         else:
             self.render_template('index.html', title='Chat')
@@ -187,14 +190,20 @@ class AllRoomsHandler(BaseHandler):
 
 class ChatHandler(BaseHandler):
 
+    @tornado.gen.engine
     @tornado.web.authenticated
+    @tornado.web.asynchronous
     def get(self):
+        yield tornado.gen.Task(self.user)
         self.render_template('personal_chat.html')
 
 class RoomHandler(BaseHandler):
 
+    @tornado.gen.engine
     @tornado.web.authenticated
+    @tornado.web.asynchronous
     def get(self, room):
+        yield tornado.gen.Task(self.user)
         self.render_template('room.html', room=room)
 
 class StartChatHandler(BaseHandler):
