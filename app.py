@@ -72,6 +72,8 @@ class BaseHandler(tornado.web.RequestHandler):
         queue = waiters.queue[:]
         if queue:
             next_chater = random.choice(queue)
+        else:
+            queue.append(user.uuid)
         if next_chater and next_chater != user.uuid:
             data['status'] = 'chat_started'
             data['message'] = 'start'
