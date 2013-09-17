@@ -23,6 +23,9 @@ var CHAT_URL = 'ws://{{ url }}/ws/track';
 //var CHAT_URL = 'ws://0.0.0.0:8888/track';
 
 $(function(){
+  $.ajax({
+    url: '/change_chater'
+  })
   $('input[type=submit]').on('click', function(e){
     e.preventDefault();
     var button = $(this);
