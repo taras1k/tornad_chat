@@ -81,6 +81,7 @@ class BaseHandler(tornado.web.RequestHandler):
             c.publish(user.uuid, json.dumps(data))
             user.chater = next_chater
             queue.remove(next_chater)
+            yield tornado.gen.Task(user.update)
             chater = yield tornado.gen.Task(User.objects.find_one,
                                                 {'uuid': next_chater})
             if chater:
@@ -100,7 +101,6 @@ class BaseHandler(tornado.web.RequestHandler):
             if prev_chater not in waiters.queue:
                 queue.append(prev_chater)
         waiters.queue = queue
-        yield tornado.gen.Task(user.update)
         yield tornado.gen.Task(waiters.update)
 
     def render_template(self, template_name, **kw):
