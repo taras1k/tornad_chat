@@ -18,6 +18,7 @@ class Room(Collection):
     name = StringField()
     visitors = IntegerField()
     last_chater_id = IntegerField()
+    history = ListField()
 
 
 class Waiters(Collection):

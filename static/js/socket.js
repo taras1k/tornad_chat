@@ -14,7 +14,6 @@ if (!(window.WebSocket)){
 };
 
 function process_data(data){
-  console.log(data);
   if(data['status']=='message'){
     var chater = 'chater';
     if (data['user']){

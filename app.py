@@ -14,7 +14,7 @@ import tornado.options
 from recaptcha import RecaptchaClient, RecaptchaUnreachableError, RecaptchaException
 from tornado.escape import json_encode
 from mongotor.database import Database
-from config import URL, STATIC_PATH, settings
+from config import URL, STATIC_PATH, settings, MAX_HISTORY_MESSAGES
 from models import User, Room, Waiters
 
 tornado.options.parse_command_line()
@@ -206,6 +206,21 @@ class RoomHandler(BaseHandler):
         yield tornado.gen.Task(self.user)
         self.render_template('room.html', room=room)
 
+class RoomHistoryHandler(BaseHandler):
+
+    @tornado.gen.engine
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(self, room_name):
+        room = yield tornado.gen.Task(Room.objects.find_one, {'name': room_name})
+        history = []
+        if room and room.history:
+            history = room.history[-MAX_HISTORY_MESSAGES:]
+        self.set_header('Content-type', 'application/json')
+        self.write(json_encode(history))
+        self.finish()
+
+
 class StartChatHandler(BaseHandler):
 
     @tornado.web.authenticated
@@ -236,11 +251,18 @@ class RoomMessage(BaseHandler):
     @tornado.gen.engine
     def post(self, room):
         user = yield tornado.gen.Task(self.user)
+        room = yield tornado.gen.Task(Room.objects.find_one, {'name': room})
         data = {}
         data['message'] = self.get_argument('message')
         data['status'] = 'message'
         data['user'] = 'chater%i' % user.room_chater_id
         data['uuid'] = user.uuid
+        history = []
+        if room.history:
+            history = room.history[:]
+        history.append(data)
+        room.history = history
+        yield tornado.gen.Task(room.update)
         c.publish(room, json.dumps(data))
         self.finish()
 
@@ -383,11 +405,12 @@ application = tornado.web.Application([
     (r'/all_rooms', AllRoomsHandler),
     (r'/ws/room_track/(.*)', RoomMessagesCatcher),
     (r'/room/(.*)', RoomHandler),
+    (r'/room_history/(.*)', RoomHistoryHandler),
     (r'/change_chater', StartChatHandler),
 ], **settings)
 
 if __name__ == '__main__':
-    init_data()
+    #init_data()
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(8888)
     print 'Demo is runing at 0.0.0.0:8888\nQuit the demo with CONTROL-C'

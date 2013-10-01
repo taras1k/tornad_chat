@@ -4,6 +4,8 @@ from keys import COOKIE_SECRET, RECAPTCHA_PUBLIC, RECAPTCHA_PRIVATE
 #URL = '0.0.0.0:8888'
 URL = 'chat.nek.me'
 
+MAX_HISTORY_MESSAGES = 10
+
 PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
 STATIC_PATH = os.path.join(PROJECT_PATH, 'static')
 TEMPLATE_PATH = os.path.join(PROJECT_PATH, 'templates')

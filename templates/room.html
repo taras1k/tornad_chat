@@ -19,9 +19,16 @@
 {% block script %}
 
 var CHAT_URL = 'ws://{{ url }}/ws/room_track/{{ room }}';
-//var CHAT_URL = 'ws://0.0.0.0:8888/room_track/{{ room }}';
 
 $(function(){
+  $.ajax({
+      url: '/room_history/{{ room }}',
+      success: function(data){
+        for(i in data){
+            process_data(data[i]);
+        }
+      }
+  });
   $('#change_chater').on('click', function(e){
     e.preventDefault();
     $.ajax({
