@@ -263,7 +263,7 @@ class RoomMessage(BaseHandler):
         history.append(data)
         room.history = history
         yield tornado.gen.Task(room.update)
-        c.publish(room, json.dumps(data))
+        c.publish(room.name, json.dumps(data))
         self.finish()
 
 class LogoutHandler(BaseHandler):
