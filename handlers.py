@@ -1,5 +1,6 @@
 import tornado.web
 import tornado.gen
+from config import URL
 from users.models import User
 
 @tornado.gen.engine

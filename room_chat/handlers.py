@@ -8,6 +8,7 @@ from base.handlers import BaseHandler
 from base.redis_connection import c
 from config import settings, MAX_HISTORY_MESSAGES
 from .models import Room
+from helpers import format_message
 
 class PopularRoomsHandler(BaseHandler):
 
@@ -57,7 +58,7 @@ class RoomMessage(BaseHandler):
         user = yield tornado.gen.Task(self.user)
         room = yield tornado.gen.Task(Room.objects.find_one, {'name': room})
         data = {}
-        data['message'] = self.get_argument('message')
+        data['message'] = format_message(self.get_argument('message'))
         data['status'] = 'message'
         data['user'] = 'chater%i' % user.room_chater_id
         data['uuid'] = user.uuid

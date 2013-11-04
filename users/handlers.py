@@ -4,6 +4,7 @@ import tornado.web
 import uuid
 import tornadoredis
 import random
+import json
 from base.handlers import BaseHandler
 from base.redis_connection import c
 from recaptcha import RecaptchaClient, RecaptchaUnreachableError, RecaptchaException

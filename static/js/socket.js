@@ -41,11 +41,37 @@ function chat_started(){
   show_message('Connected.', 'info');
 }
 
+function media_replacer(match, tag, data, close_tag, offset, string){
+  var obj = $.parseJSON(data);
+  console.log(obj);
+  if (obj.mime=='text/html'){
+    return  '<blockquote>'+
+            '<p>'+
+            obj.title+
+            '<small>'+
+            obj.content+
+            ' <a href="'+obj.finalurl+'">'+
+            obj.finalurl+
+            '</a>'+
+            '</small>'+
+            '</p>'+
+            '</blockquote>';
+
+  }
+  else if (obj.mime.split('/')[0]=='image'){
+    return '<blockquote>'+
+           '<img src="'+obj.finalurl+'"/>'+
+           '</blockquote>';
+  }
+  else {
+    return tag+data+close_tag;
+  }
+}
+
 function show_message(message, status){
   var msg = $('<p />').addClass('lead').text(message);
-  var pattern =
-  /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))(jpg|gif|png|jpeg|bmp))/g;
-  msg.html(msg.html().replace(pattern, "<img src='$1' />"))
+  var pattern = /(\[media_content\])(.+)(\[\/media_content\])/g;
+  msg.html(msg.html().replace(pattern, media_replacer))
   var hash_pattern = /(^|\s)#(\S+)($|\s)/g;
   msg.html(msg.html().replace(hash_pattern, " <a href='/room/$2'>#$2</a> "))
   if(status=='info'){
