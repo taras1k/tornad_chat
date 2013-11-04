@@ -5,6 +5,7 @@ import uuid
 import tornadoredis
 import random
 import json
+from helpers import format_message
 from base.handlers import BaseHandler
 from base.redis_connection import c
 from recaptcha import RecaptchaClient, RecaptchaUnreachableError, RecaptchaException
@@ -82,7 +83,7 @@ class NewMessage(BaseHandler):
     def post(self):
         user = yield tornado.gen.Task(self.user)
         data = {}
-        data['message'] = self.get_argument('message')
+        data['message'] = format_message(self.get_argument('message'))
         data['status'] = 'message'
         if user.chater:
             c.publish(user.chater, json.dumps(data))
